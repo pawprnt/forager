@@ -103,6 +103,6 @@ class GamepadNavigation:
             self._set_hint("")
             return
         if self._is_on_home():
-            self._set_hint("Gamepad · A: Open  X: Launch  B: Home")
+            self._set_hint("Gamepad · A: Open  Start: Launch  B: Home")
         else:
             self._set_hint("Gamepad · A: Play  B: Back")

@@ -18,11 +18,18 @@ class LoadingSpinner(QWidget):
         self._angle = 0
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._rotate)
-        self._timer.start(50)
 
     def _rotate(self):
         self._angle = (self._angle + 30) % 360
         self.update()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._timer.start(50)
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self._timer.stop()
 
     def paintEvent(self, event):
         p = QPainter(self)

@@ -10,7 +10,7 @@ from forager.core.game import Game
 from forager.services.icon_provider import load_icon
 from forager.ui.theme import C
 from forager.ui.icons import load_icon as load_bundled_icon
-from forager.ui.pages.downloads import DownloadBox
+from forager.ui.widgets.download_box import DownloadBox
 
 _SIDEBAR_W = 240
 
@@ -80,7 +80,6 @@ class Sidebar(QWidget):
             """
         )
         self._list.itemSelectionChanged.connect(self._on_selection_changed)
-        self._list.itemDoubleClicked.connect(self._on_double_clicked)
         layout.addWidget(self._list, stretch=1)
 
     def _on_selection_changed(self):

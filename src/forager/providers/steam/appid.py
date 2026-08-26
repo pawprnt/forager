@@ -14,6 +14,7 @@ import urllib.request
 
 from forager.core.game import Game
 from forager.artwork.cache import art_cache_dir
+from forager.utils.network import USER_AGENT
 
 STEAM_STORE_SEARCH = "https://store.steampowered.com/api/storesearch/?term={term}&l=english&cc=US"
 
@@ -84,7 +85,7 @@ def _name_matches(store_name: str, term: str) -> bool:
 
 def _steam_store_search(term: str) -> str | None:
     url = STEAM_STORE_SEARCH.format(term=urllib.parse.quote(term))
-    req = urllib.request.Request(url, headers={"User-Agent": "forager/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             payload = json.loads(resp.read().decode("utf-8"))

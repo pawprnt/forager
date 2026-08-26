@@ -24,39 +24,13 @@ except Exception:
 
 from forager.providers.steam import account, auth
 from forager.providers.steam.auth import SteamAuthError, GUARD_EMAIL_CODE
-from forager.ui.theme import C
+from forager.ui.theme import (
+    C, INPUT_QSS as _INPUT_QSS, PRIMARY_BTN_QSS as _PRIMARY_BTN_QSS,
+    SECONDARY_BTN_QSS as _SECONDARY_BTN_QSS, STATUS_QSS as _STATUS_QSS,
+    TITLE_QSS as _TITLE_QSS, LINK_QSS as _LINK_QSS,
+)
 
 _QR_PIXEL_SIZE = 256
-
-_INPUT_QSS = f"""
-QLineEdit {{
-    background-color: {C.COLOR_2}; color: {C.TEXT};
-    border: 1px solid {C.COLOR_3}; border-radius: {C.RADIUS}px;
-    padding: 5px 8px;
-}}
-QLineEdit:focus {{ border: 1px solid {C.ACCENT_1}; }}
-"""
-
-_PRIMARY_BTN_QSS = f"""
-QPushButton {{ background-color: {C.ACCENT_1}; color: {C.BG}; border: none;
- border-radius: {C.RADIUS}px; padding: 6px 16px; font-weight: 600; }}
-QPushButton:hover {{ background-color: {C.ACCENT_2}; }}
-QPushButton:disabled {{ background-color: {C.COLOR_2}; color: {C.TEXT_DIM}; }}
-"""
-
-_SECONDARY_BTN_QSS = f"""
-QPushButton {{ background-color: {C.COLOR_2}; color: {C.TEXT};
- border: 1px solid {C.COLOR_3}; border-radius: {C.RADIUS}px; padding: 6px 16px; }}
-QPushButton:hover {{ background-color: {C.COLOR_3}; }}
-"""
-
-_STATUS_QSS = f"color: {C.TEXT_DIM}; font-size: 11px; background: transparent;"
-_TITLE_QSS = f"color: {C.TEXT}; font-size: 14px; font-weight: 600; background: transparent;"
-_LINK_QSS = f"""
-QPushButton {{ background: transparent; color: {C.ACCENT_1}; border: none;
- padding: 2px 0; text-align: left; }}
-QPushButton:hover {{ color: {C.ACCENT_2}; }}
-"""
 
 
 class SteamAuthWorker(QThread):

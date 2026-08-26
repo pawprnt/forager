@@ -15,7 +15,6 @@ from forager.ui.icons import load_icon as load_bundled_icon
 class TitleBar(QWidget):
     settings_requested = Signal()
     update_proton_requested = Signal()
-    test_download_requested = Signal()
     run_updates_requested = Signal()
     back_requested = Signal()
     store_tab_requested = Signal()
@@ -46,8 +45,6 @@ class TitleBar(QWidget):
         self._main_menu = QMenu(self)
         self._main_menu.addAction("Settings…", self.settings_requested.emit)
         self._main_menu.addAction("Update Proton", self.update_proton_requested.emit)
-        self._main_menu.addSeparator()
-        self._main_menu.addAction("Test Download…", self.test_download_requested.emit)
         self._main_menu.addSeparator()
         self._main_menu.addAction("Quit", QApplication.instance().quit)
         logo.setMenu(self._main_menu)

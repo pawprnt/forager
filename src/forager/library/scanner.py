@@ -22,7 +22,10 @@ def scan_all() -> list[Game]:
         for game in scanner():
             if game not in seen:
                 seen.add(game)
-    return sorted(seen, key=lambda g: g.sort_key or g.name.lower())
+    return sorted(
+        (g for g in seen if "proton" not in g.name.lower()),
+        key=lambda g: g.sort_key or g.name.lower(),
+    )
 
 
 def _scan_steam() -> list[Game]:

@@ -47,40 +47,6 @@ class ProtonUpdateWorker(QThread):
             self.done.emit(True, version or "")
 
 
-class TestDownloadWorker(QThread):
-    progress = Signal(object)
-    done = Signal(bool, str)
-
-    def run(self):
-        from forager.compatibility.proton import DownloadProgress
-
-        total = 360_000_000
-        speed = 30_000_000
-        done_bytes = 0
-        while done_bytes < total and not self.isInterruptionRequested():
-            self.msleep(100)
-            if self.isInterruptionRequested():
-                break
-            done_bytes = min(total, done_bytes + int(speed * 0.1))
-            self.progress.emit(
-                DownloadProgress("Downloading", done_bytes / total * 100,
-                                 done_bytes, total, speed)
-            )
-        if self.isInterruptionRequested():
-            self.done.emit(False, "Download cancelled")
-            return
-        total_v = 565_695_662
-        done_v = 0
-        while done_v < total_v:
-            self.msleep(100)
-            done_v = min(total_v, done_v + int(total_v * 0.15))
-            self.progress.emit(
-                DownloadProgress("Verifying", done_v / total_v * 100,
-                                 done_v, total_v, 0)
-            )
-        self.done.emit(True, "Test")
-
-
 class ToolUpdateSignals(QObject):
     done = Signal(list)
 

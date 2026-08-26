@@ -11,6 +11,7 @@ from PySide6.QtCore import QByteArray, Qt
 from PySide6.QtGui import QPixmap, QImage
 
 from forager.core.constants import KEYRING_SERVICE
+from forager.utils.network import USER_AGENT
 
 try:
     import keyring as _keyring
@@ -46,7 +47,7 @@ def has_api_key() -> bool:
 
 def _api_headers() -> dict[str, str]:
     headers = {
-        "User-Agent": "forager/1.0",
+        "User-Agent": USER_AGENT,
         "Accept": "application/json",
     }
     key = get_api_key()
@@ -56,7 +57,7 @@ def _api_headers() -> dict[str, str]:
 
 
 def _cdn_headers() -> dict[str, str]:
-    return {"User-Agent": "forager/1.0"}
+    return {"User-Agent": USER_AGENT}
 
 
 def _api_get(path: str) -> dict | None:

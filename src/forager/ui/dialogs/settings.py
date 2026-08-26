@@ -11,10 +11,10 @@ from PySide6.QtWidgets import (
 
 from forager.core.config import settings
 from forager.ui.fonts import UI_FONT
-from forager.ui.theme import C, PAGE_BG
+from forager.ui.theme import C, DISPLAY_SIZES
 from forager.ui.icons import load_icon as load_bundled_icon
 from forager.ui.dialogs.account_tab import AccountTab
-from forager.ui.dialogs.settings_tabs import LibraryTab, ProtonTab, DISPLAY_SIZES
+from forager.ui.dialogs.settings_tabs import LibraryTab, ProtonTab
 
 _NAV_PANEL_QSS = f"""
 QFrame#SettingsNav {{
@@ -89,13 +89,6 @@ QFrame#SettingsHeader {{
 """
 
 
-def resolve_card_size(key: str) -> tuple[int, int]:
-    for k, _label, w, h in DISPLAY_SIZES:
-        if k == key:
-            return (w, h)
-    return (165, 248)
-
-
 def _nav_icon(name: str) -> QIcon:
     off = load_bundled_icon(name, "#b8bcbf").pixmap(18, 18)
     on = load_bundled_icon(name, C.ACCENT_1).pixmap(18, 18)
@@ -114,7 +107,7 @@ class SettingsDialog(QDialog):
         self.setWindowTitle("Settings")
         self.resize(760, 560)
         self.setMinimumSize(640, 500)
-        self.setStyleSheet(f"#SettingsDialog {{ background: {PAGE_BG}; }}")
+        self.setStyleSheet(f"#SettingsDialog {{ background: {C.COLOR_2}; }}")
         self.setObjectName("SettingsDialog")
 
         v = QVBoxLayout(self)
@@ -133,6 +126,7 @@ class SettingsDialog(QDialog):
         self._account = AccountTab()
 
         self._pages = QStackedWidget()
+        self._pages.setStyleSheet("QStackedWidget { background: transparent; }")
         for tab in (self._library, self._proton, self._account):
             self._pages.addWidget(tab)
         content = QFrame()

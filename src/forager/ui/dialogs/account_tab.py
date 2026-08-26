@@ -6,23 +6,13 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
-from forager.ui.theme import C
-from forager.ui.dialogs.settings_tabs import SettingsTab, _INPUT_QSS, _NOTE_QSS
+from forager.ui.theme import (
+    C, INPUT_QSS as _INPUT_QSS, NOTE_QSS as _NOTE_QSS,
+    PRIMARY_BTN_QSS, SECONDARY_BTN_QSS,
+)
+from forager.ui.dialogs.settings_tabs import SettingsTab
 from forager.ui.dialogs.steam_auth_dialog import SteamAuthDialog
 from forager.ui.dialogs.steamgriddb_dialog import SteamGridDBTokenDialog
-
-_PRIMARY_BTN_QSS = f"""
-QPushButton {{ background-color: {C.ACCENT_1}; color: {C.TEXT}; border: none;
- border-radius: {C.RADIUS}px; padding: 6px 16px; font-weight: 600; }}
-QPushButton:hover {{ background-color: {C.ACCENT_2}; }}
-QPushButton:disabled {{ background-color: {C.COLOR_2}; color: {C.TEXT_DIM}; }}
-"""
-
-_SECONDARY_BTN_QSS = f"""
-QPushButton {{ background-color: {C.COLOR_2}; color: {C.TEXT};
- border: 1px solid {C.COLOR_3}; border-radius: {C.RADIUS}px; padding: 6px 16px; }}
-QPushButton:hover {{ background-color: {C.COLOR_3}; }}
-"""
 
 
 class AccountTab(SettingsTab):
@@ -49,11 +39,11 @@ class AccountTab(SettingsTab):
         actions.setSpacing(8)
         self._steam_web_btn = QPushButton("Sign in with Steam")
         self._steam_web_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._steam_web_btn.setStyleSheet(_PRIMARY_BTN_QSS)
+        self._steam_web_btn.setStyleSheet(PRIMARY_BTN_QSS)
         self._steam_web_btn.clicked.connect(self._on_steam_signin)
         self._steam_signout_btn = QPushButton("Sign out")
         self._steam_signout_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._steam_signout_btn.setStyleSheet(_SECONDARY_BTN_QSS)
+        self._steam_signout_btn.setStyleSheet(SECONDARY_BTN_QSS)
         self._steam_signout_btn.clicked.connect(self._on_steam_signout)
         actions.addWidget(self._steam_web_btn)
         actions.addWidget(self._steam_signout_btn)
@@ -71,14 +61,14 @@ class AccountTab(SettingsTab):
         token_row.addWidget(self._token_edit, stretch=1)
         self._token_save_btn = QPushButton("Save token")
         self._token_save_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._token_save_btn.setStyleSheet(_SECONDARY_BTN_QSS)
+        self._token_save_btn.setStyleSheet(SECONDARY_BTN_QSS)
         self._token_save_btn.clicked.connect(self._save_token)
         token_row.addWidget(self._token_save_btn)
         card_lay.addLayout(token_row)
 
         self._token_get_btn = QPushButton("Get token")
         self._token_get_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._token_get_btn.setStyleSheet(_PRIMARY_BTN_QSS)
+        self._token_get_btn.setStyleSheet(PRIMARY_BTN_QSS)
         self._token_get_btn.clicked.connect(self._on_get_token)
         card_lay.addWidget(self._token_get_btn, 0, Qt.AlignmentFlag.AlignLeft)
 

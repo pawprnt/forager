@@ -19,8 +19,6 @@ from forager.artwork import pipeline as art
 from forager.ui.fonts import UI_FONT
 from forager.ui.theme import C
 
-CARD_W = 232
-CARD_H = 348
 _RADIUS = C.RADIUS
 
 _HOVER_ZOOM = 0.045  # cover scales to 1.045 while hovered

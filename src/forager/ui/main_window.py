@@ -21,19 +21,20 @@ from forager.ui.widgets.titlebar import TitleBar
 from forager.ui.widgets.recent import RecentPlayedRow
 from forager.ui.pages.game_grid import GameGrid
 from forager.ui.pages.gamepage import GamePage
-from forager.ui.dialogs.settings import SettingsDialog, resolve_card_size
+from forager.ui.dialogs.settings import SettingsDialog
+from forager.ui.theme import resolve_card_size
 from forager.ui.pages.downloads import DownloadsPage
 from forager.ui.pages.store import StorePage
 from forager.ui.widgets.controller_nav import GamepadNavigation
 from forager.ui.workers import (
-    ScanWorker, ProtonUpdateWorker, TestDownloadWorker,
+    ScanWorker, ProtonUpdateWorker,
     ToolUpdateWorker,
     ArtSignals, HeroSignals, _art_job, _hero_job,
     ToolUpdateSignals, _tool_update_check_job,
 )
 
 _WORKER_ATTRS = (
-    "_worker", "_test_worker", "_update_runner", "_proton_worker",
+    "_worker", "_update_runner", "_proton_worker",
 )
 
 _GRID_PANEL_PAD = 14 + 16          # panel top + bottom padding
@@ -118,7 +119,6 @@ class MainWindow(QMainWindow):
         self._titlebar = TitleBar()
         self._titlebar.settings_requested.connect(self._open_settings)
         self._titlebar.update_proton_requested.connect(self._update_proton)
-        self._titlebar.test_download_requested.connect(self._test_download)
         self._titlebar.back_requested.connect(self._show_home)
         self._titlebar.store_tab_requested.connect(self._show_store)
         self._titlebar.library_tab_requested.connect(self._show_home)
@@ -357,23 +357,6 @@ class MainWindow(QMainWindow):
         self._proton_worker.progress.connect(self._on_download_progress)
         self._proton_worker.done.connect(self._on_proton_updated)
         self._proton_worker.start()
-
-    def _test_download(self):
-        self._sidebar.begin_download("Test Download")
-        self._downloads_page.begin("Test Download")
-        self._test_worker = TestDownloadWorker(self)
-        self._test_worker.progress.connect(self._on_download_progress)
-        self._test_worker.done.connect(self._on_test_downloaded)
-        self._test_worker.start()
-
-    def _on_test_downloaded(self, ok: bool, result: str):
-        self._sidebar.hide_download()
-        if ok:
-            self._status_show("Test download complete")
-            self._downloads_page.complete(result)
-        else:
-            self._status_show("Test download cancelled")
-            self._downloads_page.cancelled()
 
     def _cancel_proton_update(self):
         cancel = getattr(self, "_proton_cancel", None)

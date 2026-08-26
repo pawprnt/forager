@@ -1,6 +1,6 @@
 """The Library and Proton settings tabs, plus shared tab helpers.
 
-Sections follow SpaceTheme's settings look: a blue weight-800 title over a
+Sections follow SpaceTheme's settings look: an accent weight-800 title over a
 ``color-3`` card whose rows are ``color-2`` cards. The display-size picker
 mirrors Steam's radiogroup (selected row fills with the accent colour).
 """
@@ -15,96 +15,14 @@ from PySide6.QtWidgets import (
 from forager.core.config import settings
 from forager.compatibility import proton
 from forager.ui.icons import load_icon
-from forager.ui.theme import C
-
-DISPLAY_SIZES = [
-    ("small", "Small", 120, 180),
-    ("medium", "Medium", 165, 248),
-    ("large", "Large", 250, 375),
-]
-
-_INPUT_QSS = f"""
-QLineEdit {{
-    background-color: {C.COLOR_3}; color: {C.TEXT};
-    border: none; border-radius: {C.RADIUS}px;
-    padding: 6px 10px;
-}}
-QLineEdit:focus {{ border: 1px solid {C.ACCENT_1}; }}
-"""
-
-_NOTE_QSS = f"color: {C.TEXT_DIM}; font-size: 11px; background: transparent;"
-
-_SECTION_TITLE_QSS = f"color: {C.BLUE}; font-size: 13px; font-weight: 800; background: transparent;"
-
-_SECTION_QSS = f"""
-QFrame#Section {{
-    background-color: {C.COLOR_3};
-    border: none;
-    border-radius: {C.RADIUS}px;
-}}
-"""
-
-_ROW_QSS = f"""
-QFrame#Row {{
-    background-color: {C.COLOR_2};
-    border: none;
-    border-radius: 6px;
-}}
-"""
-
-_ROW_LABEL_QSS = f"color: {C.TEXT}; font-size: 13px; font-weight: 500; background: transparent;"
-
-_SECONDARY_BTN_QSS = f"""
-QPushButton {{ background-color: {C.COLOR_2}; color: {C.TEXT};
- border: 1px solid {C.COLOR_3}; border-radius: {C.RADIUS}px;
- padding: 5px 14px; font-size: 13px; font-weight: 500; }}
-QPushButton:hover {{ background-color: {C.COLOR_3}; }}
-"""
-
-_PRIMARY_BTN_QSS = f"""
-QPushButton {{ background-color: {C.ACCENT_1}; color: {C.TEXT}; border: none;
- border-radius: {C.RADIUS}px; padding: 5px 16px; font-size: 13px; font-weight: 600; }}
-QPushButton:hover {{ background-color: {C.ACCENT_2}; }}
-QPushButton:disabled {{ background-color: {C.COLOR_2}; color: {C.TEXT_DIM}; }}
-"""
-
-_CHECK_QSS = f"""
-QCheckBox {{ color: {C.TEXT}; background: transparent; spacing: 10px; font-size: 13px; }}
-QCheckBox::indicator {{
-    width: 16px; height: 16px;
-    border: 2px solid {C.COLOR_5}; border-radius: 4px;
-    background-color: {C.COLOR_3};
-}}
-QCheckBox::indicator:hover {{ border: 3px solid {C.COLOR_5}; }}
-QCheckBox::indicator:checked {{
-    background-color: {C.ACCENT_1};
-    border: 2px solid {C.ACCENT_1};
-    image: none;
-}}
-"""
-
-_RADIO_QSS = f"""
-QRadioButton {{
-    background-color: {C.COLOR_2}; color: {C.TEXT};
-    border: none; border-radius: 6px;
-    padding: 8px 12px; font-size: 13px;
-    spacing: 10px;
-}}
-QRadioButton:hover {{ background-color: {C.COLOR_4}; }}
-QRadioButton:checked {{
-    background-color: {C.ACCENT_1}; color: {C.TEXT};
-    font-weight: 600;
-}}
-QRadioButton::indicator {{
-    width: 16px; height: 16px;
-    border: 2px solid {C.COLOR_5}; border-radius: 8px;
-    background-color: {C.COLOR_3};
-}}
-QRadioButton::indicator:hover {{ border: 3px solid {C.COLOR_5}; }}
-QRadioButton::indicator:checked {{
-    border: 2px solid {C.TEXT}; background-color: {C.TEXT};
-}}
-"""
+from forager.ui.theme import (
+    C, INPUT_QSS as _INPUT_QSS, NOTE_QSS as _NOTE_QSS,
+    SECTION_TITLE_QSS as _SECTION_TITLE_QSS, SECTION_QSS as _SECTION_QSS,
+    ROW_QSS as _ROW_QSS, ROW_LABEL_QSS as _ROW_LABEL_QSS,
+    SECONDARY_BTN_QSS as _SECONDARY_BTN_QSS, PRIMARY_BTN_QSS as _PRIMARY_BTN_QSS,
+    CHECK_QSS as _CHECK_QSS, RADIO_QSS as _RADIO_QSS,
+    DISPLAY_SIZES,
+)
 
 
 class CollapsibleSection(QWidget):
@@ -162,7 +80,7 @@ class SettingsTab(QWidget):
     """Shared helpers for building a settings page."""
 
     def _section(self, title: str) -> tuple[QWidget, QVBoxLayout]:
-        """A SpaceTheme-style section: blue title over a color-3 card.
+        """A SpaceTheme-style section: accent title over a color-3 card.
 
         Returns the outer widget (add it to the page) and the card's layout.
         """

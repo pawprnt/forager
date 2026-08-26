@@ -87,6 +87,115 @@ QPushButton:checked {{
 """
 
 
+DISPLAY_SIZES = [
+    ("small", "Small", 120, 180),
+    ("medium", "Medium", 165, 248),
+    ("large", "Large", 250, 375),
+]
+
+
+def resolve_card_size(key: str) -> tuple[int, int]:
+    for k, _label, w, h in DISPLAY_SIZES:
+        if k == key:
+            return (w, h)
+    return (165, 248)
+
+
+# -- Shared QSS fragments used across dialogs and pages -----------------
+
+INPUT_QSS = f"""
+QLineEdit {{
+    background-color: {C.COLOR_2}; color: {C.TEXT};
+    border: 1px solid {C.COLOR_5}; border-radius: {C.RADIUS}px;
+    padding: 6px 10px;
+}}
+QLineEdit:hover {{ border-color: {C.COLOR_6}; }}
+QLineEdit:focus {{ border: 1px solid {C.ACCENT_1}; }}
+"""
+
+NOTE_QSS = f"color: {C.TEXT_DIM}; font-size: 11px; background: transparent;"
+
+SECTION_TITLE_QSS = f"color: {C.ACCENT_1}; font-size: 13px; font-weight: 800; background: transparent;"
+
+SECTION_QSS = f"""
+QFrame#Section {{
+    background-color: {C.COLOR_3};
+    border: none;
+    border-radius: {C.RADIUS}px;
+}}
+"""
+
+ROW_QSS = f"""
+QFrame#Row {{
+    background-color: {C.COLOR_2};
+    border: none;
+    border-radius: 6px;
+}}
+"""
+
+ROW_LABEL_QSS = f"color: {C.TEXT}; font-size: 13px; font-weight: 500; background: transparent;"
+
+SECONDARY_BTN_QSS = f"""
+QPushButton {{ background-color: {C.COLOR_2}; color: {C.TEXT};
+ border: 1px solid {C.COLOR_3}; border-radius: {C.RADIUS}px;
+ padding: 5px 14px; font-size: 13px; font-weight: 500; }}
+QPushButton:hover {{ background-color: {C.COLOR_3}; }}
+"""
+
+PRIMARY_BTN_QSS = f"""
+QPushButton {{ background-color: {C.ACCENT_1}; color: {C.TEXT}; border: none;
+ border-radius: {C.RADIUS}px; padding: 5px 16px; font-size: 13px; font-weight: 600; }}
+QPushButton:hover {{ background-color: {C.ACCENT_2}; }}
+QPushButton:disabled {{ background-color: {C.COLOR_2}; color: {C.TEXT_DIM}; }}
+"""
+
+CHECK_QSS = f"""
+QCheckBox {{ color: {C.TEXT}; background: transparent; spacing: 10px; font-size: 13px; }}
+QCheckBox::indicator {{
+    width: 16px; height: 16px;
+    border: 2px solid {C.COLOR_5}; border-radius: 4px;
+    background-color: {C.COLOR_3};
+}}
+QCheckBox::indicator:hover {{ border: 3px solid {C.COLOR_5}; }}
+QCheckBox::indicator:checked {{
+    background-color: {C.ACCENT_1};
+    border: 2px solid {C.ACCENT_1};
+    image: none;
+}}
+"""
+
+RADIO_QSS = f"""
+QRadioButton {{
+    background-color: {C.COLOR_2}; color: {C.TEXT};
+    border: none; border-radius: 6px;
+    padding: 8px 12px; font-size: 13px;
+    spacing: 10px;
+}}
+QRadioButton:hover {{ background-color: {C.COLOR_4}; }}
+QRadioButton:checked {{
+    background-color: {C.ACCENT_1}; color: {C.TEXT};
+    font-weight: 600;
+}}
+QRadioButton::indicator {{
+    width: 16px; height: 16px;
+    border: 2px solid {C.COLOR_5}; border-radius: 8px;
+    background-color: {C.COLOR_3};
+}}
+QRadioButton::indicator:hover {{ border: 3px solid {C.COLOR_5}; }}
+QRadioButton::indicator:checked {{
+    border: 2px solid {C.TEXT}; background-color: {C.TEXT};
+}}
+"""
+
+STATUS_QSS = f"color: {C.TEXT_DIM}; font-size: 11px; background: transparent;"
+TITLE_QSS = f"color: {C.TEXT}; font-size: 14px; font-weight: 600; background: transparent;"
+LINK_QSS = f"""
+QPushButton {{ background: transparent; color: {C.ACCENT_1}; border: none;
+ padding: 2px 0; text-align: left; }}
+QPushButton:hover {{ color: {C.ACCENT_2}; }}
+"""
+
+
 def load() -> dict[str, str]:
     return {k: getattr(C, k) for k in dir(C) if k.isupper()}
 
