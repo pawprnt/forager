@@ -299,6 +299,12 @@ class MainWindow(QMainWindow):
         self._sidebar.set_games(self._games)
         self._grid.set_games(self._games)
         self._recent.set_games(self._games)
+        pending = getattr(self, "_pending_install_appid", None)
+        if pending is not None:
+            self._pending_install_appid = None
+            match = next((g for g in self._games if g.app_id == pending), None)
+            if match and getattr(self, "_gamepage", None) is not None:
+                self._gamepage.set_game(match)
         self._start_art_worker()
 
     def _start_art_worker(self):
@@ -419,6 +425,9 @@ class MainWindow(QMainWindow):
         if ok:
             self._status_show(f"Download complete: {result}")
             self._downloads_page.complete(result)
+            page = getattr(self, "_current_gamepage", None)
+            if page is not None and page.game is not None:
+                self._pending_install_appid = page.game.app_id
             self._reload_library()
         else:
             self._status_show("Download failed")
