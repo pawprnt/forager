@@ -17,6 +17,7 @@ from PySide6.QtGui import (
 from forager.core.game import Game
 from forager.core.paths import resources_dir
 from forager.services.icon_provider import load_icon
+from forager.ui.theme import C
 from forager.artwork.pixmap_utils import scale_crop
 
 _PLACEHOLDER_FONT_NAME = "VT323"
@@ -49,13 +50,13 @@ def register_placeholder_font() -> str:
 
 
 def placeholder_card(game: Game, width: int, height: int, name: str | None = None) -> QPixmap:
-    """Sunburst-banner placeholder: the wide fallback used on the game page."""
-    return _render_placeholder(game, _paint_sunburst, width, height, name)
+    """Banner placeholder: the wide fallback used on the game page."""
+    return _render_placeholder(game, _paint_surface, width, height, name)
 
 
 def placeholder_grid(game: Game, width: int, height: int, name: str | None = None) -> QPixmap:
-    """Glow-cover placeholder, rendered at 600x900 then cropped to the tile."""
-    cover = _render_placeholder(game, _paint_glow, 600, 900, name, pts=125)
+    """Cover placeholder, rendered at 600x900 then cropped to the tile."""
+    cover = _render_placeholder(game, _paint_surface, 600, 900, name, pts=125)
     return scale_crop(cover, width, height)
 
 
@@ -96,24 +97,36 @@ def _black_shadow(pix: QPixmap, blur_scale: int = 8, dx: int = 3, dy: int = 3,
     return out
 
 
-def _draw_placeholder_icon(p: QPainter, icon: QPixmap | None, w: int, h: int,
-                           h_frac: float = 0.30) -> int | None:
-    """Centered icon (no card), with the soft bottom-right shadow; returns the
-    bottom of the drawn icon for text placement."""
-    if icon is None:
-        return None
-    side = int(h * 0.42)
-    scaled = icon.scaled(side, side, Qt.AspectRatioMode.KeepAspectRatio,
-                         Qt.TransformationMode.SmoothTransformation)
-    x = (w - scaled.width()) // 2
-    y = int(h * h_frac - scaled.height() / 2)
-    p.drawImage(x - 12, y - 12, _black_shadow(scaled))
-    p.drawPixmap(x, y, scaled)
-    return y + scaled.height()
+def _paint_surface(p: QPainter, w: int, h: int):
+    """Layered SpaceTheme surface: a subtle top-lit shelf, not a flat fill."""
+    g = QLinearGradient(0, 0, 0, h)
+    g.setColorAt(0.0, QColor(C.COLOR_2))
+    g.setColorAt(1.0, QColor(C.COLOR_1))
+    p.fillRect(0, 0, w, h, g)
+    sheen = QLinearGradient(0, 0, 0, int(h * 0.4))
+    sheen.setColorAt(0.0, QColor(255, 255, 255, 14))
+    sheen.setColorAt(1.0, QColor(255, 255, 255, 0))
+    p.fillRect(0, 0, w, h, sheen)
 
 
-def _draw_placeholder_text(p: QPainter, text: str, rect: list[int], pts: int = 30):
-    """Lowercase, letter-spaced VT323 title, centered and word-wrapped."""
+def _draw_monogram(p: QPainter, text: str, w: int, h: int):
+    """Big accent first-letter mark when no icon is available."""
+    ch = next((c for c in text if c.isalnum()), "?").upper()
+    font = QFont(register_placeholder_font())
+    font.setPointSize(int(min(w, h) * 0.40))
+    font.setWeight(QFont.Weight.Bold)
+    font.setLetterSpacing(QFont.SpacingType.PercentageSpacing, 100)
+    p.setFont(font)
+    p.setPen(QColor(C.ACCENT_1))
+    p.drawText(QRectF(0, 0, w, h), ch, QTextOption(Qt.AlignmentFlag.AlignCenter))
+
+
+def _draw_title_bar(p: QPainter, w: int, h: int, bar_h: int, text: str, pts: int):
+    """Solid bottom label strip with a divider, so the title reads as a tile."""
+    top = h - bar_h
+    p.fillRect(0, top, w, bar_h, QColor(8, 10, 14, 205))
+    p.setPen(QColor(C.COLOR_3))
+    p.drawLine(0, top, w, top)
     font = QFont(register_placeholder_font())
     font.setPointSize(pts)
     font.setWeight(QFont.Weight.Normal)
@@ -122,46 +135,7 @@ def _draw_placeholder_text(p: QPainter, text: str, rect: list[int], pts: int = 3
     p.setPen(QColor("#cdd6e2"))
     opt = QTextOption(Qt.AlignmentFlag.AlignCenter)
     opt.setWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
-    p.drawText(QRectF(float(rect[0]), float(rect[1]), float(rect[2]), float(rect[3])), text, opt)
-
-
-def _paint_glow(p: QPainter, w: int, h: int):
-    g = QRadialGradient(QPointF(w * 0.5, h * 0.34), max(w, h) * 0.75)
-    g.setColorAt(0.0, QColor("#273044"))
-    g.setColorAt(1.0, QColor("#0f141b"))
-    p.fillRect(0, 0, w, h, g)
-    _accent_bloom(p, w, h, 0.32, 0.32, 46)
-
-
-def _paint_sunburst(p: QPainter, w: int, h: int):
-    g = QRadialGradient(QPointF(w / 2, h / 2), max(w, h) * 0.75)
-    g.setColorAt(0.0, QColor("#2a3340"))
-    g.setColorAt(1.0, QColor("#0f141b"))
-    p.fillRect(0, 0, w, h, g)
-    p.setPen(QColor(255, 255, 255, 13))
-    cx, cy = w / 2, h / 2
-    for deg in range(0, 360, 7):
-        rad = math.radians(deg)
-        p.drawLine(int(cx), int(cy),
-                   int(cx + math.cos(rad) * max(w, h)),
-                   int(cy + math.sin(rad) * max(w, h)))
-    _accent_bloom(p, w, h, 0.42, 0.5, 30)
-
-
-def _accent_bloom(p: QPainter, w: int, h: int, cy_frac: float, radius_frac: float, alpha: int):
-    """Soft indigo halo behind the icon so the cover reads as lit, not flat."""
-    a = QRadialGradient(QPointF(w * 0.5, h * cy_frac), max(w, h) * radius_frac)
-    a.setColorAt(0.0, QColor(102, 108, 255, alpha))
-    a.setColorAt(1.0, QColor(102, 108, 255, 0))
-    p.fillRect(0, 0, w, h, a)
-
-
-def _paint_scrim(p: QPainter, w: int, h: int):
-    """Bottom gradient so the VT323 title stays legible over bright icons."""
-    g = QLinearGradient(0, int(h * 0.55), 0, h)
-    g.setColorAt(0.0, QColor(0, 0, 0, 0))
-    g.setColorAt(1.0, QColor(0, 0, 0, 120))
-    p.fillRect(0, 0, w, h, g)
+    p.drawText(QRectF(int(w * 0.06), top, int(w * 0.88), bar_h), text, opt)
 
 
 def _local_icon_pixmap(game: Game) -> QPixmap | None:
@@ -214,13 +188,19 @@ def _render_placeholder(game: Game, background, width: int, height: int,
     p = QPainter(pix)
     p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
     background(p, width, height)
-    bottom = _draw_placeholder_icon(p, _placeholder_icon(game), width, height, 0.30)
-    _paint_scrim(p, width, height)
-    if bottom is None:
-        text_rect = [int(width * 0.08), int(height * 0.60), int(width * 0.84), int(height * 0.30)]
+    bar_h = max(40, int(height * 0.22))
+    content_h = height - bar_h
+    icon = _placeholder_icon(game)
+    if icon is not None:
+        side = int(min(width, content_h) * 0.42)
+        scaled = icon.scaled(side, side, Qt.AspectRatioMode.KeepAspectRatio,
+                             Qt.TransformationMode.SmoothTransformation)
+        x = (width - scaled.width()) // 2
+        y = int(content_h * 0.5 - scaled.height() / 2)
+        p.drawImage(x - 12, y - 12, _black_shadow(scaled))
+        p.drawPixmap(x, y, scaled)
     else:
-        text_rect = [int(width * 0.08), bottom + int(height * 0.04),
-                     int(width * 0.84), int(height - bottom - height * 0.08)]
-    _draw_placeholder_text(p, (name or game.name).replace("/", " / "), text_rect, pts)
+        _draw_monogram(p, name or game.name, width, content_h)
+    _draw_title_bar(p, width, height, bar_h, (name or game.name).replace("/", " / "), pts)
     p.end()
     return pix
