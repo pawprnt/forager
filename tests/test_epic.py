@@ -34,7 +34,10 @@ def _completed(stdout, returncode=0):
 def test_list_owned_parses(monkeypatch):
     monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/legendary")
 
+    seen = []
+
     def fake_run(cmd, *a, **k):
+        seen.append(cmd)
         if "list-installed" in cmd:
             return _completed(INSTALLED_TEXT)
         return _completed(OWNED_TEXT)
@@ -48,6 +51,7 @@ def test_list_owned_parses(monkeypatch):
     assert by_id["abc123"].provider == "epic"
     assert by_id["abc123"].installed is True
     assert by_id["def456"].installed is False
+    assert any("list-games" in c for c in seen)
 
 
 def test_is_configured_false_when_missing(monkeypatch):

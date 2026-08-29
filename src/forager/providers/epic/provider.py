@@ -99,7 +99,7 @@ class EpicProvider(Provider):
     def list_owned(self, account=None) -> list[OwnedGame]:
         if not self.is_configured():
             return []
-        owned_text = _run_legendary(["list-owners"])
+        owned_text = _run_legendary(["list-games"])
         installed_text = _run_legendary(["list-installed"])
 
         owned = _parse_games(owned_text, installed_default=False) if owned_text else []

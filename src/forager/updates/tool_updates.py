@@ -20,6 +20,7 @@ from forager.compatibility.proton import (
     depotdl_url,
     depotdownloader_bin,
     runtime_dir,
+    _flatten_depotdownloader,
 )
 
 GITHUB_LATEST_URL = (
@@ -90,5 +91,6 @@ def _download_depotdl(tag: str) -> None:
         tmp.flush()
         with zipfile.ZipFile(tmp.name) as zf:
             zf.extractall(DEPOTDL_DIR)
+    _flatten_depotdownloader()
     depotdownloader_bin().chmod(0o755)
     (DEPOTDL_DIR / "version.txt").write_text(tag, "utf-8")

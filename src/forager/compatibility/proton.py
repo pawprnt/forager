@@ -154,6 +154,29 @@ def depotdownloader_bin() -> Path:
     return DEPOTDL_DIR / "DepotDownloader"
 
 
+def _flatten_depotdownloader() -> None:
+    """The release zip nests everything under a versioned folder; collapse it so
+    the binary sits directly at ``DEPOTDL_DIR / "DepotDownloader"``."""
+    bin_path = next(DEPOTDL_DIR.rglob("DepotDownloader"), None)
+    if bin_path is None:
+        return
+    parent = bin_path.parent
+    if parent == DEPOTDL_DIR:
+        return
+    for item in list(parent.iterdir()):
+        dest = DEPOTDL_DIR / item.name
+        if dest.exists():
+            if dest.is_dir():
+                shutil.rmtree(dest, ignore_errors=True)
+            else:
+                dest.unlink()
+        item.rename(dest)
+    try:
+        parent.rmdir()
+    except OSError:
+        pass
+
+
 def ensure_depotdownloader() -> None:
     if depotdownloader_bin().is_file():
         if not (DEPOTDL_DIR / "version.txt").is_file():
@@ -165,6 +188,7 @@ def ensure_depotdownloader() -> None:
         tmp.flush()
         with zipfile.ZipFile(tmp.name) as zf:
             zf.extractall(DEPOTDL_DIR)
+    _flatten_depotdownloader()
     depotdownloader_bin().chmod(0o755)
     (DEPOTDL_DIR / "version.txt").write_text(DEPOTDL_TAG, "utf-8")
 
