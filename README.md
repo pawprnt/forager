@@ -36,6 +36,14 @@ all roadmap items are implemented. remaining work before `v1.0.0` is polish, tes
 
 ## install
 
+### from flatpak
+
+```
+flatpak remote-add --user forager https://raw.githubusercontent.com/pawprnt/forager/flatpak-repo/repo/flatpak.flatpakrepo
+flatpak install --user forager io.github.pawprnt.forager
+flatpak run io.github.pawprnt.forager
+```
+
 ### from the aur (arch linux)
 
 ```

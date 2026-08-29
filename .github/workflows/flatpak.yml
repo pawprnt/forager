@@ -1,15 +1,74 @@
-name: Publish to Flathub
-
+name: Build Flatpak
 on:
-  release:
-    types: [published]
+  push:
+    tags: ['v*']
   workflow_dispatch:
 
 jobs:
-  flatpak:
-    uses: pawprnt/.github/.github/workflows/flatpak-publish.yml@main
-    with:
-      app-id: io.github.pawprnt.forager
-      manifest-path: packaging/flatpak/io.github.pawprnt.forager.yml
-      flathub-repo: pawprnt/flathub
-    secrets: inherit
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.8
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          manifest-path: packaging/flatpak/io.github.pawprnt.forager.yml
+          bundle: forager.flatpak
+          cache-key: flatpak-builder-${{ github.sha }}
+
+      - name: Upload bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: forager-flatpak
+          path: forager.flatpak
+
+  publish-repo:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: flatpak-repo
+          fetch-depth: 0
+
+      - name: Download bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: forager-flatpak
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Setup repo
+        run: |
+          mkdir -p repo
+          if [ -f repo/forager.flatpak ]; then
+            mv repo/forager.flatpak repo/forager-old.flatpak
+          fi
+          mv forager.flatpak repo/
+          flatpak build-update-repo --generate-static-delta --prune --no-summary-index repo
+
+          cat > repo/flatpak.flatpakrepo <<EOF
+          [Flatpak Repo]
+          Title=Forager
+          Description=Game library manager
+          Url=https://raw.githubusercontent.com/${{ github.repository }}/flatpak-repo/repo
+          GPGKey=$(gpg --export --armor | sed ':a;N;$!ba;s/\n/\\n/g')
+          EOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "update flatpak repo" || exit 0
+          git push
