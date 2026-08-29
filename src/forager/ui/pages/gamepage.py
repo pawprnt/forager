@@ -197,9 +197,7 @@ class GamePage(QWidget):
         v.setSpacing(10)
 
         self._ach_header = QLabel("ACHIEVEMENTS")
-        self._ach_header.setStyleSheet(
-            style.label(self._ach_header, C.TEXT_DIM, size=11, weight=700, letter_spacing=1)
-        )
+        style.label(self._ach_header, C.TEXT_DIM, size=11, weight=700, letter_spacing=1)
         v.addWidget(self._ach_header)
 
         self._ach_list = QListWidget()
