@@ -40,6 +40,8 @@ def _launch_minecraft(game: Game) -> subprocess.Popen:
 
 
 def _launch_standalone(game: Game) -> subprocess.Popen | None:
+    if game.path is None:
+        return None
     exe = _find_executable(game.path)
     if not exe:
         return None
