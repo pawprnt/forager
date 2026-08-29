@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 from forager.ui.fonts import UI_FONT
 from forager.ui.theme import C, NAV_TAB_QSS
 from forager.ui.icons import load_icon as load_bundled_icon
+from forager.ui import style
 
 
 class TitleBar(QWidget):
@@ -23,9 +24,7 @@ class TitleBar(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedHeight(52)
-        self.setStyleSheet(
-            f"background-color: {C.COLOR_1}; border-bottom: 1px solid {C.COLOR_3};"
-        )
+        self.setStyleSheet(style.surface(1) + f" border-bottom: 1px solid {C.COLOR_3};")
         lay = QHBoxLayout(self)
         lay.setContentsMargins(16, 0, 16, 0)
         lay.setSpacing(10)
@@ -36,12 +35,7 @@ class TitleBar(QWidget):
         logo.setCursor(Qt.CursorShape.PointingHandCursor)
         logo.setToolTip("forager menu")
         logo.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        logo.setStyleSheet(
-            f"QToolButton {{ color: {C.ACCENT_1}; background: transparent; border: none;"
-            f"border-radius: {C.RADIUS}px; padding: 6px 10px; }}"
-            f"QToolButton:hover {{ background-color: {C.COLOR_3}; }}"
-            f"QToolButton::menu-indicator {{ image: none; }}"
-        )
+        logo.setStyleSheet(style.toolbutton_qss())
         self._main_menu = QMenu(self)
         self._main_menu.addAction("Settings…", self.settings_requested.emit)
         self._main_menu.addAction("Update Proton", self.update_proton_requested.emit)
@@ -68,20 +62,13 @@ class TitleBar(QWidget):
 
         self._update_pill = QPushButton()
         self._update_pill.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._update_pill.setStyleSheet(
-            f"QPushButton {{ color: {C.YELLOW}; background: transparent;"
-            f"border: 1px solid {C.YELLOW}; border-radius: {C.RADIUS}px;"
-            f"padding: 4px 10px; font-size: 11px; }}"
-            f"QPushButton:hover {{ background-color: {C.COLOR_3}; }}"
-        )
+        self._update_pill.setStyleSheet(style.pill_qss())
         self._update_pill.hide()
         self._update_pill.clicked.connect(self.run_updates_requested)
         lay.addWidget(self._update_pill)
 
         self._controller_hint = QLabel("")
-        self._controller_hint.setStyleSheet(
-            f"color: {C.TEXT_DIM}; font-size: 11px; background: transparent; padding: 4px 8px;"
-        )
+        style.label(self._controller_hint, C.TEXT_DIM, size=11, padding="4px 8px")
         lay.addWidget(self._controller_hint)
 
     def _build_tabs(self) -> QWidget:
@@ -121,15 +108,7 @@ class TitleBar(QWidget):
         btn.setIcon(load_bundled_icon(icon_name, C.TEXT))
         btn.setIconSize(QSize(18, 18))
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {C.COLOR_2}; border: none;
-                border-radius: {C.RADIUS}px;
-            }}
-            QPushButton:hover {{ background-color: {C.COLOR_3}; }}
-            """
-        )
+        btn.setStyleSheet(style.icon_button_qss())
         return btn
 
     def set_back_enabled(self, enabled: bool):

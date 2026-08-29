@@ -30,6 +30,7 @@ def label(
     size: int | None = None,
     weight: int | None = None,
     transparent: bool = True,
+    padding: str | None = None,
 ) -> None:
     """Apply SpaceTheme label styling to ``widget`` in place."""
     parts = [f"color: {color};"]
@@ -39,6 +40,8 @@ def label(
         parts.append(f"font-size: {size}px;")
     if weight is not None:
         parts.append(f"font-weight: {weight};")
+    if padding is not None:
+        parts.append(f"padding: {padding};")
     widget.setStyleSheet("".join(parts))
 
 
@@ -103,3 +106,31 @@ def button_qss(kind: str = "primary", radius: int = RADIUS) -> str:
             f"QPushButton:hover {{ color: {C.ACCENT_2}; }}"
         )
     return ""
+
+
+def icon_button_qss(bg: str = C.COLOR_2, hover: str = C.COLOR_3, radius: int = RADIUS) -> str:
+    """Square icon button: flat surface that lightens on hover."""
+    return (
+        f"QPushButton {{ background-color: {bg}; border: none; border-radius: {radius}px; }} "
+        f"QPushButton:hover {{ background-color: {hover}; }}"
+    )
+
+
+def pill_qss(color: str = C.YELLOW, hover: str = C.COLOR_3, radius: int = RADIUS) -> str:
+    """Outlined status pill (e.g. the Updates Available badge)."""
+    return (
+        f"QPushButton {{ color: {color}; background: transparent; "
+        f"border: 1px solid {color}; border-radius: {radius}px; "
+        f"padding: 4px 10px; font-size: 11px; }} "
+        f"QPushButton:hover {{ background-color: {hover}; }}"
+    )
+
+
+def toolbutton_qss(color: str = C.ACCENT_1, hover: str = C.COLOR_3, radius: int = RADIUS) -> str:
+    """Transparent accent tool-button (e.g. the logo menu button)."""
+    return (
+        f"QToolButton {{ color: {color}; background: transparent; border: none; "
+        f"border-radius: {radius}px; padding: 6px 10px; }} "
+        f"QToolButton:hover {{ background-color: {hover}; }} "
+        f"QToolButton::menu-indicator {{ image: none; }}"
+    )
