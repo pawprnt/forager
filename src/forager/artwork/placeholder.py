@@ -11,7 +11,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import (
     QPixmap, QImage, QPainter, QColor, QFont, QFontDatabase,
-    QRadialGradient, QTextOption,
+    QRadialGradient, QLinearGradient, QTextOption,
 )
 
 from forager.core.game import Game
@@ -102,7 +102,7 @@ def _draw_placeholder_icon(p: QPainter, icon: QPixmap | None, w: int, h: int,
     bottom of the drawn icon for text placement."""
     if icon is None:
         return None
-    side = int(h * 0.38)
+    side = int(h * 0.42)
     scaled = icon.scaled(side, side, Qt.AspectRatioMode.KeepAspectRatio,
                          Qt.TransformationMode.SmoothTransformation)
     x = (w - scaled.width()) // 2
@@ -126,15 +126,16 @@ def _draw_placeholder_text(p: QPainter, text: str, rect: list[int], pts: int = 3
 
 
 def _paint_glow(p: QPainter, w: int, h: int):
-    g = QRadialGradient(QPointF(w * 0.5, h * 0.32), max(w, h) * 0.7)
-    g.setColorAt(0.0, QColor("#222a36"))
+    g = QRadialGradient(QPointF(w * 0.5, h * 0.34), max(w, h) * 0.75)
+    g.setColorAt(0.0, QColor("#273044"))
     g.setColorAt(1.0, QColor("#0f141b"))
     p.fillRect(0, 0, w, h, g)
+    _accent_bloom(p, w, h, 0.32, 0.32, 46)
 
 
 def _paint_sunburst(p: QPainter, w: int, h: int):
     g = QRadialGradient(QPointF(w / 2, h / 2), max(w, h) * 0.75)
-    g.setColorAt(0.0, QColor("#262e3a"))
+    g.setColorAt(0.0, QColor("#2a3340"))
     g.setColorAt(1.0, QColor("#0f141b"))
     p.fillRect(0, 0, w, h, g)
     p.setPen(QColor(255, 255, 255, 13))
@@ -144,6 +145,23 @@ def _paint_sunburst(p: QPainter, w: int, h: int):
         p.drawLine(int(cx), int(cy),
                    int(cx + math.cos(rad) * max(w, h)),
                    int(cy + math.sin(rad) * max(w, h)))
+    _accent_bloom(p, w, h, 0.42, 0.5, 30)
+
+
+def _accent_bloom(p: QPainter, w: int, h: int, cy_frac: float, radius_frac: float, alpha: int):
+    """Soft indigo halo behind the icon so the cover reads as lit, not flat."""
+    a = QRadialGradient(QPointF(w * 0.5, h * cy_frac), max(w, h) * radius_frac)
+    a.setColorAt(0.0, QColor(102, 108, 255, alpha))
+    a.setColorAt(1.0, QColor(102, 108, 255, 0))
+    p.fillRect(0, 0, w, h, a)
+
+
+def _paint_scrim(p: QPainter, w: int, h: int):
+    """Bottom gradient so the VT323 title stays legible over bright icons."""
+    g = QLinearGradient(0, int(h * 0.55), 0, h)
+    g.setColorAt(0.0, QColor(0, 0, 0, 0))
+    g.setColorAt(1.0, QColor(0, 0, 0, 120))
+    p.fillRect(0, 0, w, h, g)
 
 
 def _local_icon_pixmap(game: Game) -> QPixmap | None:
@@ -197,6 +215,7 @@ def _render_placeholder(game: Game, background, width: int, height: int,
     p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
     background(p, width, height)
     bottom = _draw_placeholder_icon(p, _placeholder_icon(game), width, height, 0.30)
+    _paint_scrim(p, width, height)
     if bottom is None:
         text_rect = [int(width * 0.08), int(height * 0.60), int(width * 0.84), int(height * 0.30)]
     else:
