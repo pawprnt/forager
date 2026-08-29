@@ -150,6 +150,7 @@ class MainWindow(QMainWindow):
         self._sidebar.search_changed.connect(self._on_search_changed)
         self._sidebar.download_clicked.connect(self._show_downloads)
         self._downloads_page.cancel_requested.connect(self._cancel_proton_update)
+        self._downloads_page.cancel_requested.connect(self._cancel_download)
         self._titlebar.run_updates_requested.connect(self._run_tool_updates)
         self._gamepage.play.connect(self._launch_game)
         self._gamepage.stop.connect(self._stop_game)
@@ -407,7 +408,8 @@ class MainWindow(QMainWindow):
         self._sidebar.begin_download(game.name)
         self._downloads_page.begin(game.name)
         self._show_downloads()
-        self._download_worker = DownloadWorker("steam", game.app_id, str(dest), parent=self)
+        self._download_cancel = threading.Event()
+        self._download_worker = DownloadWorker("steam", game.app_id, str(dest), cancel_event=self._download_cancel, parent=self)
         self._download_worker.progress.connect(self._on_download_progress)
         self._download_worker.done.connect(self._on_install_done)
         self._download_worker.start()
@@ -437,13 +439,17 @@ class MainWindow(QMainWindow):
         self._downloads_page.begin("Proton Experimental")
         self._proton_worker = ProtonUpdateWorker(self._proton_cancel, self)
         self._proton_worker.message.connect(self._status_show)
-        self._proton_worker.message.connect(self._status_show)
         self._proton_worker.progress.connect(self._on_download_progress)
         self._proton_worker.done.connect(self._on_proton_updated)
         self._proton_worker.start()
 
     def _cancel_proton_update(self):
         cancel = getattr(self, "_proton_cancel", None)
+        if cancel is not None:
+            cancel.set()
+
+    def _cancel_download(self):
+        cancel = getattr(self, "_download_cancel", None)
         if cancel is not None:
             cancel.set()
 

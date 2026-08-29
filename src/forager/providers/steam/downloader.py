@@ -44,6 +44,10 @@ def download_app(app_id, destination, on_progress=None, cancel=None) -> None:
 
     cmd = _download_cmd(app_id, dest, username, credentials.get_password())
 
+    import time
+
+    _last = {"done": 0, "t": time.monotonic()}
+
     def on_line(line: str) -> None:
         if on_progress is None:
             return
@@ -55,7 +59,12 @@ def download_app(app_id, destination, on_progress=None, cancel=None) -> None:
                 int(m.group(3)),
                 int(m.group(4)),
             )
-            on_progress(DownloadProgress(stage, percent, done, total, 0))
+            now = time.monotonic()
+            dt = now - _last["t"]
+            speed = int((done - _last["done"]) / dt) if dt > 0 else 0
+            _last["done"] = done
+            _last["t"] = now
+            on_progress(DownloadProgress(stage, percent, done, total, speed))
 
     log, tail, code, cancelled = depotdownloader._run_dd(
         cmd, timeout=3600.0, cancel_event=cancel, on_line=on_line

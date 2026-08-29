@@ -29,9 +29,9 @@ class DownloadBox(QFrame):
         top = QHBoxLayout()
         top.setSpacing(6)
         self._name = QLabel("Downloading")
-        self._name.setStyleSheet(style.label(self._name, C.TEXT, size=12, weight=600))
+        style.label(self._name, C.TEXT, size=12, weight=600)
         self._percent = QLabel("0%")
-        self._percent.setStyleSheet(style.label(self._percent, C.ACCENT_2, size=12, weight=600))
+        style.label(self._percent, C.ACCENT_2, size=12, weight=600)
         top.addWidget(self._name)
         top.addStretch(1)
         top.addWidget(self._percent)
@@ -41,7 +41,7 @@ class DownloadBox(QFrame):
         layout.addWidget(self._bar)
 
         self._detail = QLabel("")
-        self._detail.setStyleSheet(style.label(self._detail, "#b8bcbf", size=11))
+        style.label(self._detail, "#b8bcbf", size=11)
         layout.addWidget(self._detail)
 
         self.hide()

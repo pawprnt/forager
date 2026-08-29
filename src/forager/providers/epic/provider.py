@@ -23,7 +23,7 @@ def _legendary_bin() -> str | None:
     return shutil.which("legendary")
 
 
-_GAME_RE = re.compile(r"^\*?\s*(?:\s+\*\s*)?(.+?)\s*\(([^()]+)\)\s*$")
+_GAME_RE = re.compile(r"^\*?\s*(.+)\s*\(([^()]+)\)[^\n]*$")
 _OWNED_MARKER = re.compile(r"available games", re.IGNORECASE)
 _INSTALLED_MARKER = re.compile(r"installed games", re.IGNORECASE)
 _PERCENT_RE = re.compile(r"(\d{1,3}(?:\.\d+)?)\s*%")
@@ -45,7 +45,7 @@ def _parse_games(text: str, installed_default: bool) -> list[OwnedGame]:
         m = _GAME_RE.search(stripped)
         if not m:
             continue
-        name = m.group(1).strip().lstrip("*").strip()
+        name = m.group(1).strip().lstrip("*").strip().rstrip("*").strip()
         app_id = m.group(2).strip()
         if not name or not app_id:
             continue

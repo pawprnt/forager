@@ -44,7 +44,7 @@ class WebStorePane(QWidget):
         if QWebEngineView is None:
             note = QLabel("PySide6-WebEngine is not installed.\nInstall it to browse the store in-app.")
             note.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            note.setStyleSheet(style.label(note, C.TEXT_DIM, size=14))
+            style.label(note, C.TEXT_DIM, size=14)
             layout.addWidget(note)
             self._view = None
             return
@@ -73,7 +73,7 @@ class StorePage(QWidget):
 
         header = QLabel("Store")
         header.setFont(QFont(UI_FONT, 22, QFont.Weight.Bold))
-        header.setStyleSheet(style.label(header, C.TEXT))
+        style.label(header, C.TEXT)
         layout.addWidget(header)
 
         self._stack = QStackedWidget()
@@ -117,15 +117,15 @@ class StorePage(QWidget):
 
     def _placeholder(self, name: str) -> QWidget:
         page = QFrame()
-        page.setStyleSheet(style.panel(page, 2))
+        style.panel(page, 2)
         v = QVBoxLayout(page)
         v.addStretch(1)
         store = QLabel(name)
         store.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        store.setStyleSheet(style.label(store, C.TEXT_DIM, size=22, weight=700))
+        style.label(store, C.TEXT_DIM, size=22, weight=700)
         note = QLabel("Store integration coming soon")
         note.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        note.setStyleSheet(style.label(note, C.TEXT_DIM, size=13))
+        style.label(note, C.TEXT_DIM, size=13)
         v.addWidget(store)
         v.addWidget(note)
         v.addStretch(1)

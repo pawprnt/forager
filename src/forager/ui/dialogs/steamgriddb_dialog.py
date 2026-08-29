@@ -9,11 +9,15 @@ Account → SteamGridDB field.
 from __future__ import annotations
 
 from PySide6.QtCore import QTimer, QUrl
-from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QDialog, QLabel, QVBoxLayout
 
 from forager.ui import style
 from forager.ui.theme import C
+
+try:
+    from PySide6.QtWebEngineWidgets import QWebEngineView
+except ImportError:
+    QWebEngineView = None
 
 LOGIN_URL = "https://www.steamgriddb.com/login"
 API_URL = "https://www.steamgriddb.com/profile/preferences/api"
@@ -43,6 +47,12 @@ class SteamGridDBTokenDialog(QDialog):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(0)
 
+        if QWebEngineView is None:
+            note = QLabel("PySide6-WebEngine is not installed; the in-app browser is unavailable.")
+            note.setStyleSheet(f"color: {C.TEXT_DIM}; padding: 12px;")
+            note.setWordWrap(True)
+            lay.addWidget(note, 1)
+            return
         self._view = QWebEngineView(self)
         lay.addWidget(self._view, 1)
 
@@ -53,8 +63,8 @@ class SteamGridDBTokenDialog(QDialog):
         self._status.setObjectName("sgdbStatus")
         self._status.setWordWrap(True)
         self._status.setStyleSheet(
-            style.label(self._status, C.TEXT_DIM, size=11)
-            + f" background: {C.COLOR_2}; padding: 6px 12px;"
+            f"color: {C.TEXT_DIM}; font-size: 11px; "
+            f"background: {C.COLOR_2}; padding: 6px 12px;"
         )
         lay.addWidget(self._status)
 

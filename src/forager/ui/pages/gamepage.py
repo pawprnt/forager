@@ -57,7 +57,7 @@ class GamePage(QWidget):
 
         self._title = QLabel("")
         self._title.setFont(QFont(UI_FONT, 26, QFont.Weight.Bold))
-        self._title.setStyleSheet(style.label(self._title, C.TEXT))
+        style.label(self._title, C.TEXT)
         self._title.setWordWrap(True)
         v.addWidget(self._title)
 
@@ -77,7 +77,7 @@ class GamePage(QWidget):
         self._play_icon_label.setStyleSheet("background: transparent;")
         play_lay.addWidget(self._play_icon_label)
         self._play_text = QLabel("Play")
-        self._play_text.setStyleSheet(style.label(self._play_text, "#ffffff", size=17, weight=600))
+        style.label(self._play_text, "#ffffff", size=17, weight=600)
         play_lay.addWidget(self._play_text)
         play_lay.addStretch(1)
         self._play_btn.clicked.connect(self._on_play)
@@ -91,7 +91,7 @@ class GamePage(QWidget):
         info_row.addWidget(self._source_badge, alignment=Qt.AlignmentFlag.AlignVCenter)
 
         self._path_label = QLabel("")
-        self._path_label.setStyleSheet(style.label(self._path_label, C.TEXT_DIM, size=12))
+        style.label(self._path_label, C.TEXT_DIM, size=12)
         self._path_label.setWordWrap(True)
         info_row.addWidget(self._path_label, stretch=1)
 
@@ -151,13 +151,13 @@ class GamePage(QWidget):
     def _build_info_box(self) -> QFrame:
         box = QFrame()
         box.setFixedWidth(300)
-        box.setStyleSheet(style.panel(box, 2))
+        style.panel(box, 2)
         v = QVBoxLayout(box)
         v.setContentsMargins(14, 12, 14, 12)
         v.setSpacing(10)
 
         header = QLabel("GAME INFO")
-        header.setStyleSheet(style.label(header, C.TEXT_DIM, size=11, weight=700, letter_spacing=1))
+        style.label(header, C.TEXT_DIM, size=11, weight=700, letter_spacing=1)
         v.addWidget(header)
 
         self._info_rows: dict[str, QLabel] = {}
@@ -165,10 +165,10 @@ class GamePage(QWidget):
             row = QHBoxLayout()
             row.setSpacing(8)
             k = QLabel(key.upper())
-            k.setStyleSheet(style.label(k, C.TEXT_DIM, size=11))
+            style.label(k, C.TEXT_DIM, size=11)
             k.setFixedWidth(70)
             val = QLabel("")
-            val.setStyleSheet(style.label(val, C.TEXT, size=12))
+            style.label(val, C.TEXT, size=12)
             val.setWordWrap(True)
             row.addWidget(k)
             row.addWidget(val, stretch=1)
@@ -191,7 +191,7 @@ class GamePage(QWidget):
 
     def _build_achievements_box(self) -> QFrame:
         box = QFrame()
-        box.setStyleSheet(style.panel(box, 2))
+        style.panel(box, 2)
         v = QVBoxLayout(box)
         v.setContentsMargins(14, 12, 14, 12)
         v.setSpacing(10)
@@ -225,7 +225,7 @@ class GamePage(QWidget):
         for ach in achievements:
             mark = "✔" if ach["achieved"] else "○"
             item = QListWidgetItem(f"{mark}  {ach['name']}")
-            item.setForeground(QColor(C.ACCENT if ach["achieved"] else C.TEXT_DIM))
+            item.setForeground(QColor(C.ACCENT_1 if ach["achieved"] else C.TEXT_DIM))
             self._ach_list.addItem(item)
         self._ach_frame.show()
 

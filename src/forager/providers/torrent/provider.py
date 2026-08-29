@@ -88,7 +88,11 @@ class TorrentProvider(Provider):
         if handle is None:
             alert = ses.wait_for_alert(60000)
             while alert is not None:
-                if hasattr(alert, "handle") and alert.handle is not None:
+                if "failed" in type(alert).__name__.lower():
+                    raise BackendNotConfigured(
+                        f"Failed to add torrent: {getattr(alert, 'message', 'unknown error')}"
+                    )
+                if getattr(alert, "handle", None) is not None:
                     handle = alert.handle
                     break
                 alert = ses.wait_for_alert(60000)

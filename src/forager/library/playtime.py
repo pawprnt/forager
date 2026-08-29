@@ -27,8 +27,8 @@ def game_key(game: Game) -> str:
         return f"steam:{game.app_id}"
     try:
         path = str(game.path.resolve())
-    except OSError:
-        path = str(game.path)
+    except (OSError, AttributeError):
+        path = str(game.path) if game.path is not None else game.name
     return f"{game.source.name.lower()}:{path}"
 
 

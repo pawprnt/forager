@@ -87,15 +87,18 @@ class GogProvider(Provider):
         if not downlink:
             raise ProviderError("No suitable Windows installer found for this GOG product")
 
+        filename = Path(downlink.split("?")[0]).name or f"gog-{app_id}.bin"
+        dest.mkdir(parents=True, exist_ok=True)
+        out_path = dest / filename
+
         try:
             req = urllib.request.Request(downlink, headers=auth_header)
             with urllib.request.urlopen(req, timeout=60) as resp:
                 total = resp.length if resp.length is not None else 0
                 downloaded = 0
                 chunk_size = 1 << 16
-                last_t = None
                 speed = 0
-                with open(dest, "wb") as out:
+                with open(out_path, "wb") as out:
                     while True:
                         if cancel is not None and getattr(cancel, "is_set", lambda: False)():
                             raise ProviderError("Download cancelled")

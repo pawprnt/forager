@@ -135,11 +135,11 @@ class SettingsDialog(QDialog):
 
         title = QLabel("Settings")
         title.setFont(QFont(UI_FONT, 17, QFont.Weight.Bold))
-        title.setStyleSheet(style.label(title, C.ACCENT_1))
+        style.label(title, C.ACCENT_1)
         lay.addWidget(title)
 
         subtitle = QLabel("Library, Proton and account")
-        subtitle.setStyleSheet(style.label(subtitle, C.TEXT_DIM, size=12))
+        style.label(subtitle, C.TEXT_DIM, size=12)
         lay.addWidget(subtitle)
         lay.addStretch(1)
         return header

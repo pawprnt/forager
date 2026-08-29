@@ -77,6 +77,7 @@ class Sidebar(QWidget):
             """
         )
         self._list.itemSelectionChanged.connect(self._on_selection_changed)
+        self._list.itemDoubleClicked.connect(self._on_double_clicked)
         layout.addWidget(self._list, stretch=1)
 
     def _on_selection_changed(self):
@@ -138,7 +139,7 @@ class Sidebar(QWidget):
             item = QListWidgetItem()
             item.setText(g.name.replace("/", " / "))
             item.setData(Qt.ItemDataRole.UserRole, g)
-            item.setToolTip(str(g.path))
+            item.setToolTip(g.display_path)
             icon = load_icon(g, allow_network=False)
             if icon is not None:
                 item.setIcon(QIcon(icon))

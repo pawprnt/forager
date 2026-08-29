@@ -18,14 +18,22 @@ class SteamProvider(Provider):
         return bool(credentials.has_credentials() or credentials.has_api_key())
 
     def list_owned(self, account=None) -> list[OwnedGame]:
+        owned = library.owned_games()
+        installed_ids: set[str] = set()
+        try:
+            from forager.library.scanner import _scan_steam
+
+            installed_ids = {g.app_id for g in _scan_steam() if g.app_id}
+        except Exception:
+            installed_ids = set()
         return [
             OwnedGame(
                 app_id=g["appid"],
                 name=g["name"],
                 provider="steam",
-                installed=False,
+                installed=g["appid"] in installed_ids,
             )
-            for g in library.owned_games()
+            for g in owned
         ]
 
     def download(self, app_id, destination, on_progress=None, cancel=None) -> None:

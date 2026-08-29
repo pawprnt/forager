@@ -44,7 +44,7 @@ class GameGrid(QWidget):
 
         self._empty_label = QLabel("No games found.")
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._empty_label.setStyleSheet(style.label(self._empty_label, C.TEXT_DIM, size=14, padding="60px"))
+        style.label(self._empty_label, C.TEXT_DIM, size=14, padding="60px")
         v.addWidget(self._empty_label)
 
         self._scroll = QScrollArea()
