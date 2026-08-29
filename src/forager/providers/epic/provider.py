@@ -1,8 +1,8 @@
-"""Epic Games backend driven by the Legendary CLI (roadmap: Epic Games).
+"""Epic Games backend driven by the Legendary CLI.
 
 Everything talks to Legendary via ``subprocess`` — nothing here imports or
 links against Legendary, so the module stays importable even when the
-``legendary`` binary is not installed. See ``docs/providers/epic.md``.
+``legendary`` binary is not installed.
 """
 from __future__ import annotations
 

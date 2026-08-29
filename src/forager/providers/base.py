@@ -1,7 +1,7 @@
 """Provider abstraction shared by every store backend (Steam, Epic, GOG, torrent).
 
 Each backend exposes a uniform surface so the library, downloads, and store
-pages can treat them interchangeably. See ``docs/architecture/providers.md``.
+pages can treat them interchangeably.
 """
 from __future__ import annotations
 

@@ -1,137 +1,105 @@
 # forager
 
-A Steam-style game launcher for your local game library.
+a chill game launcher for your local library.
+steam-like vibes, space theme aesthetics, no subscription fees.
 
-## Features
+## features
 
-- **Library view** — Steam-style grid of cover tiles with a searchable
-  sidebar game list.
-- **SpaceTheme-inspired UI** — the dark, layered, rounded look is heavily
-  inspired by [SpaceTheme](https://github.com/SpaceTheme/Steam) (a Millennium
-  skin for the Steam client).
-- **Gamepad support** — navigate and launch with a controller (via `evdev`).
-- **Cover art** — pulls portrait grid art, headers, banners, and icons from
-  local Steam files, the Steam CDN, and SteamGridDB (token stored in your
-  system keyring).
-- **Steam account** — sign in with the Steam mobile app (QR code) or
-  username/password; the session persists in your system keyring.
-- **Proton** — runs standalone Windows `.exe` games through a single shared
-  Proton prefix. Add extras to the prefix (e.g. the RPG Maker VX Ace RTP) from
-  the Settings dialog.
-- **Tool updates** — keeps the bundled tools up to date with live progress on
-  the downloads page.
+- **library view** — steam-style grid of cover tiles with a searchable sidebar
+- **space theme ui** — dark, layered, rounded look inspired by [SpaceTheme](https://github.com/SpaceTheme/Steam)
+- **gamepad support** — navigate and launch with a controller (via `evdev`)
+- **cover art** — pulls art from local steam files, the steam CDN, and steamgriddb
+- **steam account** — sign in with the steam mobile app (QR code) or username/password
+- **full steam library** — shows all owned games, not just installed ones
+- **steam downloads** — download and install steam games directly
+- **store** — browse and buy games from the steam store in-app
+- **epic games** — epic games support via legendary
+- **gog** — gog support for offline installers
+- **torrents** — torrent downloads via libtorrent
+- **steam achievements** — view your achievements on the game page
+- **proton** — runs windows `.exe` games through a shared proton prefix
+- **tool updates** — keeps bundled tools up to date with live progress
 
-## Roadmap
+## roadmap
 
-See [docs/roadmap.md](docs/roadmap.md) for the plan towards `v1.0.0` (full Steam library,
-Steam downloads, store webview, torrenting, Steam achievements, Epic Games, GOG).
+all roadmap items are implemented. remaining work before `v1.0.0` is polish, testing, and packaging.
 
-## Documentation
+| feature | status |
+|---------|--------|
+| full steam library | done |
+| steam downloads | done |
+| store webview | done |
+| epic games | done |
+| gog | done |
+| steam achievements | done |
+| torrenting | done |
 
-Architecture deep-dives, development guides, design notes and API references
-live under [`docs/`](docs/README.md).
+## install
 
-## Layout
-
-Your game library folder is expected to look like:
+### from the aur (arch linux)
 
 ```
-~/Games/
-├── steam/
-│   └── steamapps/            # appmanifest_*.acf + common/<name>
-├── minecraft/                # one folder per Minecraft instance
-└── drm-free/
-    ├── standalone/
-    │   └── <engine>/         # engine group: other, rpgMaker, unity, unreal
-    │       └── <game>/       # standalone games (finds *.x86_64, *.sh, *.py, *.exe)
-    └── series/
-        └── <engine>/
-            └── <series>/
-                └── <game>/   # games grouped by series
-```
-
-Games grouped by their engine (`rpgMaker`, `unity`, `unreal`, `other`) under
-`standalone/` (single games) and `series/` (series games). Games are detected
-by an executable or `Game.ini` in the folder.
-
-## Install
-
-### From the AUR (Arch Linux)
-
-```sh
 paru -S forager
-# or: yay -S forager
 ```
 
-### Manual
+### from source
 
-Requirements: Python 3.10+ and a Steam client install (for the Steam library
-source and its local cover art).
-
-From source:
-
-```sh
-git clone https://github.com/foxinwinter/forager.git
+```
+git clone https://github.com/pawprnt/forager.git
 cd forager
 python -m venv .venv
 .venv/bin/pip install -e .
 .venv/bin/forager
 ```
 
-Or install a release wheel — download the `forager-<version>-py3-none-any.whl`
-asset from the [latest release](https://github.com/foxinwinter/forager/releases)
-and run:
+### system-wide (arch linux)
 
-```sh
-pip install forager-<version>-py3-none-any.whl
-forager
 ```
-
-#### Install as a system-wide executable (`/usr/bin/forager`)
-
-The package defines a `forager` console script, so installing it into the
-system Python puts the command in `/usr/bin/forager`. Install the runtime
-dependencies with your package manager first, then:
-
-```sh
-# Arch Linux example: runtime deps via pacman
 sudo pacman -S python-pyside6 python-evdev python-keyring python-pillow
-
-git clone https://github.com/foxinwinter/forager.git
+git clone https://github.com/pawprnt/forager.git
 cd forager
 sudo python -m pip install --break-system-packages --no-deps .
 forager
 ```
 
-- `--break-system-packages` is required on Arch (PEP 668 externally-managed
-  Python).
-- `--no-deps` keeps pacman in charge of the dependencies, so pip never pulls a
-  conflicting PySide6 from PyPI.
-- The same works with a release wheel:
-  `sudo python -m pip install --break-system-packages --no-deps forager-<version>-py3-none-any.whl`.
+## configuration
 
-Alternatively, uninstall it with `sudo python -m pip uninstall forager`.
+settings are stored in `~/.config/forager/settings.json`.
+cover art caches live in `~/.cache/forager/`.
 
-## Configuration
-
-Settings are stored in `~/.config/forager/settings.json`; cover art caches live
-in `~/.cache/forager/`. Open the **forager → Settings…** menu to change the game
-library folder, the Steam appcache/librarycache folder, the card size, the
-Steam account, and which extras get added to the Proton prefix.
-
-Environment overrides:
+environment overrides:
 
 - `FORAGER_CONFIG_DIR` — config directory (default `~/.config/forager`)
 - `FORAGER_CACHE_DIR` — cache directory (default `~/.cache/forager`)
-- `STEAMGRIDDB_API_KEY` — SteamGridDB token fallback if none is stored in keyring
+- `STEAMGRIDDB_API_KEY` — steamgriddb token fallback
 
-## License
+## library layout
+
+your game library folder should look like:
+
+```
+~/Games/
+├── steam/
+│   └── steamapps/
+├── minecraft/
+└── drm-free/
+    ├── standalone/
+    │   └── <engine>/
+    │       └── <game>/
+    └── series/
+        └── <engine>/
+            └── <series>/
+                └── <game>/
+```
+
+games are detected by an executable or `Game.ini` in the folder.
+
+## license
 
 AGPL-3.0
 
-Bundled third-party assets carry their own licenses (included in the package
-under `forager/assets/`): the UI icons are from
-[Iconoir](https://iconoir.com) (MIT, © 2021 Luca Burgio,
-`assets/icons/ICONOIR-LICENSE.txt`) and the placeholder-art font is
-[VT323](https://github.com/google/fonts/tree/main/ofl/vt323) (SIL OFL 1.1,
-`assets/fonts/OFL.txt`).
+bundled third-party assets carry their own licenses:
+- [Iconoir](https://iconoir.com) (MIT) — UI icons
+- [VT323](https://github.com/google/fonts/tree/main/ofl/vt323) (SIL OFL 1.1) — placeholder art font
+- [FluentSystemIcons](https://github.com/microsoft/fluentui-system-icons) (MIT) — store webview icons
+- [SpaceTheme](https://github.com/SpaceTheme/Steam) (MIT) — store webview styling

@@ -1,6 +1,3 @@
-"""Torrent backend (roadmap: ``libtorrent`` generic downloader).
-
-Design notes live in ``docs/providers/torrent.md``.
-"""
+"""Torrent backend (roadmap: ``libtorrent`` generic downloader)."""
 
 from forager.providers.torrent.provider import TorrentProvider  # registers provider

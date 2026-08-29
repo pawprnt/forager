@@ -1,3 +1,9 @@
 [
-  { "file": "getting-started.md", "title": "getting started" }
+  { "file": "getting-started.md", "title": "getting started" },
+  { "file": "features.md", "title": "features" },
+  { "file": "install.md", "title": "install" },
+  { "file": "configuration.md", "title": "configuration" },
+  { "file": "library-layout.md", "title": "library layout" },
+  { "file": "roadmap.md", "title": "roadmap" },
+  { "file": "contributing.md", "title": "contributing" }
 ]

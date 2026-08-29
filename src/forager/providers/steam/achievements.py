@@ -1,8 +1,7 @@
-"""Steam achievements (roadmap item 7).
+"""Steam achievements.
 
 Implements offline, keyless retrieval of a player's achievements from the local
 ``userdata/<steamid>/<appid>/achievements.vdf`` file written by the Steam client.
-See ``docs/providers/steam.md``.
 """
 from __future__ import annotations
 
