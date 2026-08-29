@@ -27,11 +27,59 @@ _STORES = ("Steam", "Epic Games", "GOG", "itch.io")
 
 _STEAM_URL = "https://store.steampowered.com/"
 
+_STEAM_RECOLOR_CSS = """
+:root {
+    --st-accent-1: 102, 108, 255;
+    --st-accent-2: 135, 140, 255;
+    --st-color-1: 17, 17, 17;
+    --st-color-2: 30, 30, 30;
+    --st-color-3: 20, 20, 20;
+    --st-color-4: 24, 24, 24;
+    --st-color-5: 38, 41, 44;
+    --st-color-6: 38, 38, 41;
+    --st-background: 10, 10, 10;
+    --st-red: 240, 74, 74;
+    --st-green: 36, 166, 90;
+    --st-blue: 75, 137, 239;
+    --st-blue-hover: 100, 154, 242;
+    --st-yellow: 239, 141, 75;
+    --st-border-radius: 8px;
+    --st-store-max-width: 940px;
+}
+body {
+    background-color: rgb(var(--st-color-1)) !important;
+    color: #fff !important;
+}
+body .page_content_ctn,
+body .page_content,
+body .maincontent,
+body ._22xtsolKcQit92o-LBeRWD {
+    max-width: var(--st-store-max-width) !important;
+    margin: 0 auto !important;
+    background: unset !important;
+}
+body a { color: rgb(var(--st-blue)) !important; }
+body a:hover { color: rgb(var(--st-blue-hover)) !important; }
+.game_review_summary { font-weight: 600; color: rgb(var(--st-red)); }
+.game_review_summary.mixed { color: rgb(var(--st-yellow)); }
+.game_review_summary.positive { color: rgb(var(--st-green)); }
+.game_review_summary.no_reviews,
+.game_review_summary.not_enough_reviews { color: #929396; }
+.discount_block { display: flex !important; align-items: center !important; gap: 6px !important; padding: 6px !important; border-radius: 8px !important; color: #fff !important; background-color: rgb(var(--st-color-1)) !important; }
+.discount_block .discount_pct { padding: 4px 6px !important; border-radius: 8px !important; color: rgb(var(--st-green)) !important; background-color: rgb(var(--st-green), .3) !important; }
+.discount_block .discount_prices { display: flex !important; flex-direction: column !important; padding: 0 !important; background-color: unset !important; }
+.discount_block .discount_prices .discount_final_price { color: rgb(var(--st-green)) !important; }
+.discount_block.no_discount .discount_prices .discount_final_price { color: #fff !important; }
+body::-webkit-scrollbar { background-color: rgb(var(--st-color-1)) !important; }
+body::-webkit-scrollbar-thumb { border-radius: 8px !important; border: 5px solid transparent !important; background-clip: content-box !important; background-color: rgb(var(--st-accent-1)) !important; }
+body::-webkit-scrollbar-thumb:hover { border: 4px solid transparent !important; background-color: rgb(var(--st-accent-2)) !important; }
+"""
+
 _STEAM_RECOLOR_JS = (
     "var s=document.createElement('style');"
-    "s.textContent='html,body{background-color:%s !important;}';"
+    "s.textContent=%s;"
     "document.head.appendChild(s);"
-) % PAGE_BG
+) % repr(_STEAM_RECOLOR_CSS)
 
 
 class WebStorePane(QWidget):
@@ -49,7 +97,7 @@ class WebStorePane(QWidget):
             self._view = None
             return
         self._view = QWebEngineView()
-        self._view.setStyleSheet(f"background-color: {PAGE_BG};")
+        self._view.setStyleSheet("background-color: #111111;")
         self._view.loadFinished.connect(self._on_load_finished)
         layout.addWidget(self._view)
         self._url = url
