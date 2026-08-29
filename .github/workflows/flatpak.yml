@@ -31,7 +31,7 @@ jobs:
         run: |
           mkdir -p /tmp/flatpak-repo/forager
           cp -r repo /tmp/flatpak-repo/forager/repo
-          flatpak build-update-repo --generate-static-delta --prune /tmp/flatpak-repo/forager/repo
+          flatpak build-update-repo --generate-static-deltas --prune /tmp/flatpak-repo/forager/repo
 
       - name: Push
         run: |
