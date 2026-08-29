@@ -17,56 +17,7 @@
     --st-yellow: 239, 141, 75;
     --st-yellow-hover: 239, 141, 75;
 }
-#global_header {
-    background-color: rgb(var(--st-color-2)) !important;
-    border-radius: 8px !important;
-    margin: 0 auto !important;
-    max-width: var(--st-store-max-width) !important;
-}
-#global_header .content {
-    max-width: var(--st-store-max-width) !important;
-    margin: 0 auto !important;
-}
-#global_header a,
-#global_header .menuitem {
-    color: #a9a9a9 !important;
-}
-#global_header a:hover,
-#global_header .menuitem:hover {
-    color: #fff !important;
-}
-#global_header .supernav {
-    color: #a9a9a9 !important;
-    font-size: 14px !important;
-    padding: 8px 12px !important;
-}
-#global_header .supernav.supernav_active {
-    color: #fff !important;
-}
-#global_actions {
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-}
-#global_actions .global_action_link {
-    color: #a9a9a9 !important;
-    font-size: 13px !important;
-}
-#global_actions .global_action_link:hover {
-    color: #fff !important;
-}
-#global_actions .header_installsteam_btn {
-    background-color: rgb(var(--st-green), .2) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 6px 14px !important;
-    color: rgb(var(--st-green)) !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-}
-#global_actions .header_installsteam_btn:hover {
-    background-color: rgb(var(--st-green), .4) !important;
-}
+#global_header,
 .responsive_page_frame.with_header > .responsive_page_menu_ctn.mainmenu {
     display: none !important;
 }
