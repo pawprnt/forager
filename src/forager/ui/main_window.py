@@ -151,6 +151,7 @@ class MainWindow(QMainWindow):
         self._sidebar.download_clicked.connect(self._show_downloads)
         self._downloads_page.cancel_requested.connect(self._cancel_proton_update)
         self._downloads_page.cancel_requested.connect(self._cancel_download)
+        self._downloads_page.settings_requested.connect(self._open_settings)
         self._titlebar.run_updates_requested.connect(self._run_tool_updates)
         self._gamepage.play.connect(self._launch_game)
         self._gamepage.stop.connect(self._stop_game)
