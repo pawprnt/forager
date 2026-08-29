@@ -27,6 +27,7 @@ from forager.ui.pages.downloads import DownloadsPage
 from forager.ui.pages.store import StorePage
 from forager.ui.widgets.controller_nav import GamepadNavigation
 from forager.ui.widgets.loading_spinner import LoadingSpinner
+from forager.ui import style
 from forager.ui.workers import (
     ScanWorker, ProtonUpdateWorker,
     ToolUpdateWorker,
@@ -160,7 +161,7 @@ class MainWindow(QMainWindow):
 
     def _build_loading(self) -> QWidget:
         overlay = QWidget(self.centralWidget())
-        overlay.setStyleSheet(f"background-color: {C.COLOR_1};")
+        overlay.setStyleSheet(style.surface_qss(1))
         lay = QVBoxLayout(overlay)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(18)
@@ -168,7 +169,7 @@ class MainWindow(QMainWindow):
         spinner = LoadingSpinner()
         lay.addWidget(spinner, alignment=Qt.AlignmentFlag.AlignCenter)
         label = QLabel("loading your library…")
-        label.setStyleSheet(f"color: {C.TEXT_DIM}; font-size: 14px; background: transparent;")
+        style.label(label, C.TEXT_DIM, size=14)
         lay.addWidget(label, alignment=Qt.AlignmentFlag.AlignCenter)
         return overlay
 

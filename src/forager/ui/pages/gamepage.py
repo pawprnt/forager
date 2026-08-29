@@ -12,23 +12,10 @@ from forager.ui.fonts import UI_FONT
 from forager.ui.widgets.banner import Banner
 from forager.ui.theme import C
 from forager.ui.icons import load_icon as load_bundled_icon
+from forager.ui import style
 
-_PLAY_QSS = f"""
-QPushButton {{
-    background-color: {C.GREEN}; border: none;
-    border-radius: {C.RADIUS}px;
-}}
-QPushButton:hover {{ background-color: {C.GREEN_HOVER}; }}
-QPushButton:disabled {{ background-color: {C.COLOR_3}; }}
-"""
-
-_RUNNING_QSS = f"""
-QPushButton {{
-    background-color: {C.COLOR_3}; border: none;
-    border-radius: {C.RADIUS}px;
-}}
-QPushButton:hover {{ background-color: {C.COLOR_4}; }}
-"""
+_PLAY_QSS = style.button_qss("play")
+_RUNNING_QSS = style.button_qss("running")
 
 
 class GamePage(QWidget):
