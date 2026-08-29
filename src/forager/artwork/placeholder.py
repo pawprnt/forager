@@ -141,6 +141,8 @@ def _draw_title_bar(p: QPainter, w: int, h: int, bar_h: int, text: str, pts: int
 def _local_icon_pixmap(game: Game) -> QPixmap | None:
     """Raw local icon (folder icon / .minecraft/icon.png / embedded .exe icon)
     at full resolution, unlike the 48px-capped ``load_icon``."""
+    if game.path is None:
+        return None
     for name in ("icon.png", "icon.ico", "icon.svg", "Icon.png", "Icon.ico"):
         candidate = game.path / name
         if candidate.is_file():

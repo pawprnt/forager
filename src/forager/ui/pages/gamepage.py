@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QFrame, QListWidget, QListWidgetItem,
 )
 
-from forager.core.game import Game
+from forager.core.game import Game, Source
 from forager.artwork import pipeline as art
 from forager.providers.steam import credentials
 from forager.providers.steam.achievements import (
@@ -85,9 +85,8 @@ class GamePage(QWidget):
 
         self._source_badge = QLabel("")
         self._source_badge.setStyleSheet(
-            style.label(self._source_badge, C.TEXT_DIM, size=12, padding="6px 12px")
-            + style.surface(3)
-            + f" border-radius: {C.RADIUS}px;"
+            f"color: {C.TEXT_DIM}; background-color: {C.COLOR_3}; "
+            f"font-size: 12px; padding: 6px 12px; border-radius: {C.RADIUS}px;"
         )
         info_row.addWidget(self._source_badge, alignment=Qt.AlignmentFlag.AlignVCenter)
 
@@ -213,7 +212,7 @@ class GamePage(QWidget):
 
     def _populate_achievements(self, game: Game) -> None:
         steamid = credentials.get_steamid()
-        if game.source != Game.Source.STEAM or not game.app_id or not steamid:
+        if game.source != Source.STEAM or not game.app_id or not steamid:
             self._ach_frame.hide()
             return
         achievements = player_achievements(steamid, game.app_id)
@@ -232,6 +231,7 @@ class GamePage(QWidget):
 
     def set_game(self, game: Game):
         self.game = game
+        self._running = False
 
         hero = art.load_hero(game, allow_network=False)
         if hero is None:
@@ -270,6 +270,10 @@ class GamePage(QWidget):
             self._play_text.setText("Install")
 
     def set_running(self, running: bool) -> None:
+        if self.game is None:
+            return
+        if not (self.game.installed and self.game.path is not None):
+            return
         if running == self._running:
             return
         self._running = running

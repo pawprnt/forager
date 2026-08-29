@@ -61,6 +61,8 @@ def _scan_owned_steam() -> list[Game]:
 
     games: list[Game] = []
     for entry in owned_games():
+        if entry["appid"] in STEAM_TOOL_APP_IDS:
+            continue
         games.append(
             Game(
                 name=entry["name"],

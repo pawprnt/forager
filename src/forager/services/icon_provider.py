@@ -109,6 +109,8 @@ def _load_steam_logo(app_id: str | None) -> QPixmap | None:
 
 
 def _load_game_icon_direct(game: Game) -> QPixmap | None:
+    if game.path is None:
+        return None
     for name in ("icon.png", "icon.ico", "icon.svg", "Icon.png", "Icon.ico"):
         candidate = game.path / name
         if candidate.is_file():

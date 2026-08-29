@@ -84,6 +84,8 @@ class StorePage(QWidget):
         layout.addWidget(self._build_tabs())
         layout.addWidget(self._stack, stretch=1)
 
+        self._web_pane.load()
+
     def _build_tabs(self) -> QWidget:
         bar = QWidget()
         bar.setStyleSheet(style.surface_qss(2))
