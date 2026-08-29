@@ -19,19 +19,17 @@ jobs:
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
           flatpak install --user --noninteractive -y flathub org.kde.Platform//6.8 org.kde.Sdk//6.8
 
-      - name: Build
-        run: |
-          flatpak-builder --user --force-clean --disable-rofiles-fuse --repo=repo _build packaging/flatpak/io.github.pawprnt.forager.yml
-
       - name: Clone flatpak-repo
         run: |
           git clone https://x-access-token:${{ secrets.FLATPAK_GITHUB_TOKEN }}@github.com/pawprnt/flatpak-repo.git /tmp/flatpak-repo
 
+      - name: Build
+        run: |
+          flatpak-builder --user --force-clean --disable-rofiles-fuse --repo=/tmp/flatpak-repo/repo _build packaging/flatpak/io.github.pawprnt.forager.yml
+
       - name: Update repo
         run: |
-          mkdir -p /tmp/flatpak-repo/forager
-          cp -r repo /tmp/flatpak-repo/forager/repo
-          flatpak build-update-repo --generate-static-deltas --prune /tmp/flatpak-repo/forager/repo
+          flatpak build-update-repo --generate-static-deltas --prune /tmp/flatpak-repo/repo
 
       - name: Push
         run: |
