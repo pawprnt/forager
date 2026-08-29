@@ -57,3 +57,4 @@ def test_download_writes_file_into_destination(monkeypatch, tmp_path):
     assert any(f.name == "installer.bin" for f in files)
     assert (tmp_path / "installer.bin").read_bytes() == b"INSTALLER-BYTES"
     assert progress and progress[-1].percent == 100.0
+    assert any(p.speed > 0 for p in progress)

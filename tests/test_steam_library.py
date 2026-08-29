@@ -64,6 +64,19 @@ def test_steam_provider_list_owned(monkeypatch, app_creds):
     assert owned[0].installed is False
 
 
+def test_steam_provider_marks_locally_installed(monkeypatch, app_creds):
+    monkeypatch.setattr(
+        "forager.providers.steam.library.owned_games",
+        lambda: [{"appid": "440", "name": "Team Fortress 2"}],
+    )
+    monkeypatch.setattr(
+        "forager.library.scanner._scan_steam",
+        lambda: [Game(name="Team Fortress 2", source=Source.STEAM, app_id="440", installed=True)],
+    )
+    owned = SteamProvider().list_owned()
+    assert owned[0].installed is True
+
+
 def test_game_uninstalled_display_path():
     g = Game(name="X", source=Source.STEAM, path=None, app_id="1", installed=False)
     assert g.display_path == "—"
