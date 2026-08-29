@@ -17,6 +17,10 @@
     --st-yellow: 239, 141, 75;
     --st-yellow-hover: 239, 141, 75;
 }
+#global_header,
+.responsive_page_frame.with_header > .responsive_page_menu_ctn.mainmenu {
+    display: none !important;
+}
 /** Store */
 
 
