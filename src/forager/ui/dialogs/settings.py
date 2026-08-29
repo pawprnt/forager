@@ -10,19 +10,12 @@ from PySide6.QtWidgets import (
 )
 
 from forager.core.config import settings
+from forager.ui import style
 from forager.ui.fonts import UI_FONT
 from forager.ui.theme import C, DISPLAY_SIZES
 from forager.ui.icons import load_icon as load_bundled_icon
 from forager.ui.dialogs.account_tab import AccountTab
 from forager.ui.dialogs.settings_tabs import LibraryTab, ProtonTab
-
-_NAV_PANEL_QSS = f"""
-QFrame#SettingsNav {{
-    background-color: {C.COLOR_2};
-    border: none;
-    border-radius: {C.RADIUS}px;
-}}
-"""
 
 _NAV_BTN_QSS = f"""
 QPushButton {{
@@ -49,14 +42,6 @@ QPushButton:checked {{
 }}
 """
 
-_CONTENT_PANEL_QSS = f"""
-QFrame#SettingsContent {{
-    background-color: {C.COLOR_2};
-    border: none;
-    border-radius: {C.RADIUS}px;
-}}
-"""
-
 _BUTTONS_QSS = f"""
 QPushButton {{
     background-color: {C.COLOR_2};
@@ -80,14 +65,6 @@ QPushButton#saveButton:hover {{
     background-color: {C.ACCENT_2};
 }}
 """
-
-_HEADER_QSS = f"""
-QFrame#SettingsHeader {{
-    background-color: {C.COLOR_1};
-    border-bottom: 1px solid {C.COLOR_3};
-}}
-"""
-
 
 def _nav_icon(name: str) -> QIcon:
     off = load_bundled_icon(name, "#b8bcbf").pixmap(18, 18)
@@ -131,7 +108,7 @@ class SettingsDialog(QDialog):
             self._pages.addWidget(tab)
         content = QFrame()
         content.setObjectName("SettingsContent")
-        content.setStyleSheet(_CONTENT_PANEL_QSS)
+        style.panel(content, 2)
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(20, 20, 20, 20)
         content_layout.addWidget(self._pages)
@@ -147,7 +124,7 @@ class SettingsDialog(QDialog):
     def _build_header(self) -> QWidget:
         header = QFrame()
         header.setObjectName("SettingsHeader")
-        header.setStyleSheet(_HEADER_QSS)
+        header.setStyleSheet(style.surface(1) + f" border-bottom: 1px solid {C.COLOR_3};")
         lay = QHBoxLayout(header)
         lay.setContentsMargins(20, 12, 20, 12)
         lay.setSpacing(10)
@@ -158,11 +135,11 @@ class SettingsDialog(QDialog):
 
         title = QLabel("Settings")
         title.setFont(QFont(UI_FONT, 17, QFont.Weight.Bold))
-        title.setStyleSheet(f"color: {C.ACCENT_1}; background: transparent;")
+        title.setStyleSheet(style.label(title, C.ACCENT_1))
         lay.addWidget(title)
 
         subtitle = QLabel("Library, Proton and account")
-        subtitle.setStyleSheet(f"color: {C.TEXT_DIM}; font-size: 12px; background: transparent;")
+        subtitle.setStyleSheet(style.label(subtitle, C.TEXT_DIM, size=12))
         lay.addWidget(subtitle)
         lay.addStretch(1)
         return header
@@ -170,7 +147,7 @@ class SettingsDialog(QDialog):
     def _build_nav(self) -> QWidget:
         panel = QFrame()
         panel.setObjectName("SettingsNav")
-        panel.setStyleSheet(_NAV_PANEL_QSS)
+        style.panel(panel, 2)
         panel.setFixedWidth(190)
         lay = QVBoxLayout(panel)
         lay.setContentsMargins(8, 8, 8, 8)

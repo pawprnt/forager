@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 
 from forager.core.config import settings
 from forager.compatibility import proton
+from forager.ui import style
 from forager.ui.icons import load_icon
 from forager.ui.theme import (
     C, INPUT_QSS as _INPUT_QSS, NOTE_QSS as _NOTE_QSS,
@@ -54,10 +55,7 @@ class CollapsibleSection(QWidget):
         v.addWidget(self._header)
 
         self._frame = QFrame()
-        self._frame.setStyleSheet(
-            f"QFrame {{ background: {C.COLOR_2}; border: 1px solid {C.COLOR_3};"
-            f" border-radius: {C.RADIUS}px; }}"
-        )
+        self._frame.setStyleSheet(style.surface_qss(2) + f" border: 1px solid {C.COLOR_3};")
         self._body = QVBoxLayout(self._frame)
         self._body.setContentsMargins(10, 10, 10, 10)
         self._body.setSpacing(8)

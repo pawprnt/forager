@@ -12,6 +12,7 @@ from PySide6.QtCore import QTimer, QUrl
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QDialog, QLabel, QVBoxLayout
 
+from forager.ui import style
 from forager.ui.theme import C
 
 LOGIN_URL = "https://www.steamgriddb.com/login"
@@ -29,13 +30,6 @@ fetch('/api/public/user', { method: 'GET', credentials: 'same-origin' })
 
 _READ_JS = "window.__foragerSgdbLoggedIn === true;"
 
-_DIALOG_QSS = f"""
-QDialog {{ background-color: {C.BG}; }}
-QLabel#sgdbStatus {{ color: {C.TEXT_DIM}; font-size: 11px;
- background: {C.COLOR_2}; padding: 6px 12px; }}
-"""
-
-
 class SteamGridDBTokenDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -43,7 +37,7 @@ class SteamGridDBTokenDialog(QDialog):
         self.setModal(True)
         self.resize(900, 640)
         self.setMinimumSize(640, 480)
-        self.setStyleSheet(_DIALOG_QSS)
+        self.setStyleSheet(style.surface(1))
 
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
@@ -58,6 +52,10 @@ class SteamGridDBTokenDialog(QDialog):
         )
         self._status.setObjectName("sgdbStatus")
         self._status.setWordWrap(True)
+        self._status.setStyleSheet(
+            style.label(self._status, C.TEXT_DIM, size=11)
+            + f" background: {C.COLOR_2}; padding: 6px 12px;"
+        )
         lay.addWidget(self._status)
 
         self._navigated = False
