@@ -10,6 +10,7 @@ from forager.core.game import Game
 from forager.services.icon_provider import load_icon
 from forager.ui.theme import C
 from forager.ui.icons import load_icon as load_bundled_icon
+from forager.ui import style
 from forager.ui.widgets.download_box import DownloadBox
 
 _SIDEBAR_W = 240
@@ -26,7 +27,7 @@ class Sidebar(QWidget):
         self._search_text = ""
 
         self.setFixedWidth(_SIDEBAR_W)
-        self.setStyleSheet(f"background-color: {C.COLOR_2};")
+        self.setStyleSheet(style.surface(2))
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 16, 12, 12)
@@ -41,11 +42,7 @@ class Sidebar(QWidget):
         self._search = QLineEdit()
         self._search.setPlaceholderText("Search games...")
         self._search.setClearButtonEnabled(True)
-        self._search.setStyleSheet(
-            f"QLineEdit {{ background-color: {C.COLOR_3}; border: none;"
-            f"border-radius: {C.RADIUS}px; padding: 7px 12px; font-size: 13px; }}"
-            f"QLineEdit:focus {{ border: 1px solid {C.ACCENT_1}; }}"
-        )
+        self._search.setStyleSheet(style.lineedit_qss())
         self._search.textChanged.connect(self._on_search)
         layout.addWidget(self._search)
 
@@ -111,15 +108,13 @@ class Sidebar(QWidget):
 
     def _build_user_panel(self, layout):
         panel = QFrame()
-        panel.setStyleSheet(
-            f"background-color: {C.COLOR_3}; border: none; border-radius: {C.RADIUS}px;"
-        )
+        panel.setStyleSheet(style.surface_qss(3))
         panel_layout = QVBoxLayout(panel)
         panel_layout.setContentsMargins(10, 10, 10, 10)
         panel_layout.setSpacing(8)
 
         self._count_label = QLabel()
-        self._count_label.setStyleSheet(f"color: {C.TEXT_MUTED}; font-size: 12px;")
+        style.label(self._count_label, C.TEXT_MUTED, size=12)
         panel_layout.addWidget(self._count_label)
 
         layout.addWidget(panel)

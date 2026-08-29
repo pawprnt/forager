@@ -51,6 +51,21 @@ def rounded(widget: QWidget, radius: int = RADIUS) -> None:
     widget.setStyleSheet(f"border-radius: {radius}px;")
 
 
+def lineedit_qss(
+    bg: str = C.COLOR_3,
+    radius: int = RADIUS,
+    focus: str = C.ACCENT_1,
+    padding: str = "7px 12px",
+    size: int = 13,
+) -> str:
+    """SpaceTheme search/edit field: flat filled surface, accent focus ring."""
+    return (
+        f"QLineEdit {{ background-color: {bg}; border: none; border-radius: {radius}px; "
+        f"padding: {padding}; font-size: {size}px; }}"
+        f"QLineEdit:focus {{ border: 1px solid {focus}; }}"
+    )
+
+
 def button_qss(kind: str = "primary", radius: int = RADIUS) -> str:
     """Reusable button QSS for the common SpaceTheme button variants.
 
