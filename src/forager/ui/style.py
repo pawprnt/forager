@@ -31,6 +31,7 @@ def label(
     weight: int | None = None,
     transparent: bool = True,
     padding: str | None = None,
+    letter_spacing: int | None = None,
 ) -> None:
     """Apply SpaceTheme label styling to ``widget`` in place."""
     parts = [f"color: {color};"]
@@ -42,6 +43,8 @@ def label(
         parts.append(f"font-weight: {weight};")
     if padding is not None:
         parts.append(f"padding: {padding};")
+    if letter_spacing is not None:
+        parts.append(f"letter-spacing: {letter_spacing}px;")
     widget.setStyleSheet("".join(parts))
 
 

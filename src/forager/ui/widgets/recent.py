@@ -17,6 +17,7 @@ from forager.library.playtime import PlaytimeStore, format_playtime, game_key
 from forager.artwork import pipeline as art
 from forager.ui.fonts import UI_FONT
 from forager.ui.theme import C
+from forager.ui import style
 from forager.ui.widgets.game_card import GameCard
 
 _RECENT_CARD_W = 120
@@ -50,16 +51,11 @@ class RecentPlayedRow(QWidget):
         v.setSpacing(8)
 
         title = QLabel("RECENTLY PLAYED")
-        title.setStyleSheet(
-            f"color: {C.BLUE}; font-size: 11px; font-weight: 800;"
-            f"letter-spacing: 1px; background: transparent;"
-        )
+        style.label(title, C.BLUE, size=11, weight=800, letter_spacing=1)
         v.addWidget(title)
 
         self._empty = QLabel("Games you play will show up here.")
-        self._empty.setStyleSheet(
-            f"color: {C.TEXT_DIM}; font-size: 13px; background: transparent; padding: 18px 0;"
-        )
+        style.label(self._empty, C.TEXT_DIM, size=13, padding="18px 0")
         self._empty.setVisible(False)
         v.addWidget(self._empty)
 
@@ -149,14 +145,14 @@ class RecentPlayedRow(QWidget):
         name_label = QLabel(name)
         name_label.setFixedWidth(self._card_w)
         name_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        name_label.setStyleSheet(f"color: {C.TEXT}; font-size: 12px; background: transparent;")
+        style.label(name_label, C.TEXT, size=12)
         name_label.setToolTip(game.name)
         v.addWidget(name_label)
 
         time_label = QLabel(format_playtime(self._store.playtime(game_key(game))))
         time_label.setFixedWidth(self._card_w)
         time_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        time_label.setStyleSheet(f"color: {C.TEXT_DIM}; font-size: 11px; background: transparent;")
+        style.label(time_label, C.TEXT_DIM, size=11)
         v.addWidget(time_label)
 
         card.set_art(art.load_grid(game, allow_network=False))
