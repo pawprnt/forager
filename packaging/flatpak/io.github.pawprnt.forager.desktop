@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=forager
+GenericName=Game Launcher
+Comment=Steam-like game launcher for your local game library
+Exec=forager
+Icon=io.github.pawprnt.forager
+Terminal=false
+Categories=Game;Qt;
+StartupNotify=true
+Keywords=game;launcher;steam;library;

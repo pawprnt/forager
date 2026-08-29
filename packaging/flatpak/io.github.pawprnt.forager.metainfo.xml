@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.pawprnt.forager</id>
+  <name>forager</name>
+  <summary>Steam-like game launcher for your local game library</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-only</project_license>
+  <developer id="io.github.pawprnt">
+    <name>pawprnt</name>
+  </developer>
+  <description>
+    <p>
+      forager is a chill game launcher for your local library.
+      Steam-like vibes, space theme aesthetics, no subscription fees.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Steam library integration with full game list</li>
+      <li>Download and install Steam games</li>
+      <li>Browse and buy games from the Steam store</li>
+      <li>Epic Games support via Legendary</li>
+      <li>GOG support for offline installers</li>
+      <li>Torrent downloads</li>
+      <li>Steam achievements</li>
+      <li>Proton support for Windows games</li>
+      <li>Gamepad navigation</li>
+      <li>Space theme UI</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.pawprnt.forager.desktop</launchable>
+  <url type="homepage">https://github.com/pawprnt/forager</url>
+  <url type="bugtracker">https://github.com/pawprnt/forager/issues</url>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/pawprnt/forager/main/screenshots/library.png</image>
+      <caption>Library view</caption>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.5.0" date="2025-08-29">
+      <description>
+        <p>Initial Flathub release.</p>
+      </description>
+    </release>
+  </releases>
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>gamepad</control>
+  </recommends>
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+</component>

@@ -9,7 +9,7 @@ jobs:
   flatpak:
     uses: pawprnt/.github/.github/workflows/flatpak-publish.yml@main
     with:
-      app-id: org.pawprnt.Forager
-      manifest-path: packaging/flatpak/org.pawprnt.Forager.yml
+      app-id: io.github.pawprnt.forager
+      manifest-path: packaging/flatpak/io.github.pawprnt.forager.yml
       flathub-repo: pawprnt/flathub
     secrets: inherit
