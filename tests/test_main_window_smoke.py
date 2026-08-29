@@ -25,3 +25,15 @@ def test_main_window_constructs(app):
     finally:
         win.close()
         QApplication.processEvents()
+
+
+def test_downloads_settings_button_opens_settings(app, monkeypatch):
+    win = MainWindow()
+    try:
+        called = {}
+        monkeypatch.setattr(win, "_open_settings", lambda: called.setdefault("opened", True))
+        win._downloads_page.settings_requested.emit()
+        assert called.get("opened")
+    finally:
+        win.close()
+        QApplication.processEvents()
