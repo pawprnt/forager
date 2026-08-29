@@ -10,7 +10,7 @@ API and features may change at any time.
 | Downloading Steam games | Planned | DepotDownloader (vendored for Steam login; steamcmd now installs Proton) + stored credentials |
 | Buying Steam games | Planned | `QWebEngineView` wrapper of the real Steam store, recolored with an injected stylesheet to match the app theme (same approach as Steam's own embedded client) |
 | Torrenting | Planned | `libtorrent` integration as a generic downloader; legality of torrented content is the user's responsibility |
-| Steam achievements (view/display) | Planned | Local `userdata/<steamid>/<appid>/achievements.vdf` (offline, no key) and/or the Web API `ISteamUserStats/GetPlayerAchievements` |
+| Steam achievements (view/display) | In progress | Local `achievements.vdf` parse + `GamePage` panel done; Web API `GetPlayerAchievements` still pending |
 | Epic Games support | Planned | Legendary (open-source EGS CLI) as backend: auth, download, launch |
 | GOG support | Planned | GOG's unofficial web API for owned offline installers |
 

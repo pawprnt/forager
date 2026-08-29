@@ -3,11 +3,16 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap, QFont, QColor
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea,
-    QFrame,
+    QFrame, QListWidget, QListWidgetItem,
 )
 
 from forager.core.game import Game
 from forager.artwork import pipeline as art
+from forager.providers.steam import credentials
+from forager.providers.steam.achievements import (
+    achievement_summary,
+    player_achievements,
+)
 from forager.ui.fonts import UI_FONT
 from forager.ui.widgets.banner import Banner
 from forager.ui.theme import C
@@ -95,6 +100,10 @@ class GamePage(QWidget):
         self._info_box = self._build_info_box()
         v.addWidget(self._info_box, alignment=Qt.AlignmentFlag.AlignLeft)
 
+        self._ach_frame = self._build_achievements_box()
+        self._ach_frame.hide()
+        v.addWidget(self._ach_frame)
+
         v.addStretch(1)
 
         scroll.setWidget(content)
@@ -177,6 +186,46 @@ class GamePage(QWidget):
         else:
             self.play.emit(self.game)
 
+    def _build_achievements_box(self) -> QFrame:
+        box = QFrame()
+        box.setStyleSheet(style.panel(box, 2))
+        v = QVBoxLayout(box)
+        v.setContentsMargins(14, 12, 14, 12)
+        v.setSpacing(10)
+
+        self._ach_header = QLabel("ACHIEVEMENTS")
+        self._ach_header.setStyleSheet(
+            style.label(self._ach_header, C.TEXT_DIM, size=11, weight=700, letter_spacing=1)
+        )
+        v.addWidget(self._ach_header)
+
+        self._ach_list = QListWidget()
+        self._ach_list.setStyleSheet(
+            "QListWidget { background: transparent; border: none; }"
+        )
+        self._ach_list.setMaximumHeight(180)
+        v.addWidget(self._ach_list)
+        return box
+
+    def _populate_achievements(self, game: Game) -> None:
+        steamid = credentials.get_steamid()
+        if game.source != Game.Source.STEAM or not game.app_id or not steamid:
+            self._ach_frame.hide()
+            return
+        achievements = player_achievements(steamid, game.app_id)
+        self._ach_list.clear()
+        if not achievements:
+            self._ach_frame.hide()
+            return
+        earned, total, _frac = achievement_summary(achievements)
+        self._ach_header.setText(f"ACHIEVEMENTS  ({earned}/{total})")
+        for ach in achievements:
+            mark = "✔" if ach["achieved"] else "○"
+            item = QListWidgetItem(f"{mark}  {ach['name']}")
+            item.setForeground(QColor(C.ACCENT if ach["achieved"] else C.TEXT_DIM))
+            self._ach_list.addItem(item)
+        self._ach_frame.show()
+
     def set_game(self, game: Game):
         self.game = game
 
@@ -204,6 +253,7 @@ class GamePage(QWidget):
         self._path_label.setText(game.display_path)
         self._info_rows["source"].setText(game.source_name)
         self._info_rows["app_id"].setText(game.app_id or "—")
+        self._populate_achievements(game)
 
     def set_running(self, running: bool) -> None:
         if running == self._running:
