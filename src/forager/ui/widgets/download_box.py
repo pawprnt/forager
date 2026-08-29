@@ -3,6 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QHBoxLayout
 
+from forager.ui import style
 from forager.ui.theme import C
 from forager.ui.pages.downloads import ProgressBar, format_size
 
@@ -17,9 +18,8 @@ class DownloadBox(QFrame):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setObjectName("downloadBox")
         self.setStyleSheet(
-            f"#downloadBox {{ background-color: {C.COLOR_2}; border: none;"
-            f"border-radius: {C.RADIUS}px; }}"
-            f"#downloadBox:hover {{ background-color: {C.COLOR_3}; }}"
+            style.surface_qss(2)
+            + f"#downloadBox:hover {{ background-color: {C.COLOR_3}; }}"
         )
 
         layout = QVBoxLayout(self)
@@ -29,13 +29,9 @@ class DownloadBox(QFrame):
         top = QHBoxLayout()
         top.setSpacing(6)
         self._name = QLabel("Downloading")
-        self._name.setStyleSheet(
-            f"color: {C.TEXT}; font-size: 12px; font-weight: 600; background: transparent;"
-        )
+        self._name.setStyleSheet(style.label(self._name, C.TEXT, size=12, weight=600))
         self._percent = QLabel("0%")
-        self._percent.setStyleSheet(
-            f"color: {C.ACCENT_2}; font-size: 12px; font-weight: 600; background: transparent;"
-        )
+        self._percent.setStyleSheet(style.label(self._percent, C.ACCENT_2, size=12, weight=600))
         top.addWidget(self._name)
         top.addStretch(1)
         top.addWidget(self._percent)
@@ -45,9 +41,7 @@ class DownloadBox(QFrame):
         layout.addWidget(self._bar)
 
         self._detail = QLabel("")
-        self._detail.setStyleSheet(
-            f"color: #b8bcbf; font-size: 11px; background: transparent;"
-        )
+        self._detail.setStyleSheet(style.label(self._detail, "#b8bcbf", size=11))
         layout.addWidget(self._detail)
 
         self.hide()

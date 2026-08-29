@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QGridLayout, QScroll
 from forager.core.game import Game
 from forager.artwork import pipeline as art
 from forager.library.metadata import filter_games, sort_key
+from forager.ui import style
 from forager.ui.theme import C
 from forager.ui.widgets.game_card import GameCard
 
@@ -43,9 +44,7 @@ class GameGrid(QWidget):
 
         self._empty_label = QLabel("No games found.")
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._empty_label.setStyleSheet(
-            f"color: {C.TEXT_DIM}; font-size: 14px; background: transparent; padding: 60px;"
-        )
+        self._empty_label.setStyleSheet(style.label(self._empty_label, C.TEXT_DIM, size=14, padding="60px"))
         v.addWidget(self._empty_label)
 
         self._scroll = QScrollArea()

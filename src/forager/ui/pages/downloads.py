@@ -14,12 +14,10 @@ from PySide6.QtWidgets import (
 )
 
 from forager.ui.fonts import UI_FONT
+from forager.ui import style
 from forager.ui.theme import C
 from forager.ui.icons import load_icon
 from forager.core.paths import games_dir
-
-_SPEED_QSS = f"color: #b8bcbf; font-size: 11px; background: transparent;"
-_DIM_TEXT_QSS = "color: #b8bcbf; background: transparent;"
 
 
 def format_size(num: float) -> str:
@@ -87,13 +85,9 @@ class _Banner(QWidget):
         col = QVBoxLayout()
         col.setSpacing(4)
         self._title = QLabel("")
-        self._title.setStyleSheet(
-            f"color: {C.TEXT}; font-size: 20px; font-weight: 700; background: transparent;"
-        )
+        self._title.setStyleSheet(style.label(self._title, C.TEXT, size=20, weight=700))
         self._status = QLabel("")
-        self._status.setStyleSheet(
-            f"color: {C.ACCENT_1}; font-size: 13px; font-weight: 600; background: transparent;"
-        )
+        self._status.setStyleSheet(style.label(self._status, C.ACCENT_1, size=13, weight=600))
         col.addWidget(self._title)
         col.addWidget(self._status)
         info.addLayout(col)
@@ -154,17 +148,14 @@ class _StatItem(QWidget):
         chip.setPixmap(load_icon(icon_name, C.ACCENT_1).pixmap(18, 18))
         chip.setFixedSize(36, 36)
         chip.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        chip.setStyleSheet(f"background-color: {C.COLOR_3}; border-radius: 8px;")
+        chip.setStyleSheet(style.surface_qss(3))
 
         text = QVBoxLayout()
         text.setSpacing(1)
         cap = QLabel(caption)
-        cap.setStyleSheet(f"color: #b8bcbf; font-size: 11px; background: transparent;")
+        cap.setStyleSheet(style.label(cap, "#b8bcbf", size=11))
         self._value = QLabel("\u2014")
-        self._value.setStyleSheet(
-            f"color: {C.ACCENT_1 if accent else C.TEXT}; font-size: 15px;"
-            f"font-weight: 700; background: transparent;"
-        )
+        self._value.setStyleSheet(style.label(self._value, C.ACCENT_1 if accent else C.TEXT, size=15, weight=700))
         text.addWidget(cap)
         text.addWidget(self._value)
 
@@ -184,7 +175,7 @@ class DownloadsPage(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setStyleSheet(f"background-color: {C.BG};")
+        self.setStyleSheet(style.bg())
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 8, 12, 12)
         layout.setSpacing(12)
@@ -193,7 +184,7 @@ class DownloadsPage(QWidget):
         header.setContentsMargins(12, 8, 12, 0)
         title = QLabel("Downloads")
         title.setFont(QFont(UI_FONT, 20, QFont.Weight.Bold))
-        title.setStyleSheet(f"color: {C.TEXT}; background: transparent;")
+        title.setStyleSheet(style.label(title, C.TEXT))
         gear = QPushButton()
         gear.setIcon(load_icon("settings", C.TEXT_DIM))
         gear.setIconSize(QSize(18, 18))
@@ -231,15 +222,12 @@ class DownloadsPage(QWidget):
         queue.setSpacing(8)
         qheader = QLabel("Updates")
         qheader.setFont(QFont(UI_FONT, 15, QFont.Weight.Bold))
-        qheader.setStyleSheet(f"color: {C.TEXT}; background: transparent;")
+        qheader.setStyleSheet(style.label(qheader, C.TEXT))
         queue.addWidget(qheader)
 
         self._item = QFrame()
         self._item.setObjectName("queueItem")
-        self._item.setStyleSheet(
-            f"#queueItem {{ background-color: {C.COLOR_2}; border: none;"
-            f"border-radius: {C.RADIUS}px; }}"
-        )
+        style.panel(self._item, 2)
         item_lay = QHBoxLayout(self._item)
         item_lay.setContentsMargins(16, 12, 16, 12)
         item_lay.setSpacing(14)
@@ -248,17 +236,15 @@ class DownloadsPage(QWidget):
         chip.setPixmap(load_icon("download", C.ACCENT_2).pixmap(20, 20))
         chip.setFixedSize(34, 34)
         chip.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        chip.setStyleSheet(f"background-color: {C.COLOR_3}; border-radius: 8px;")
+        chip.setStyleSheet(style.surface_qss(3))
         item_lay.addWidget(chip)
 
         col = QVBoxLayout()
         col.setSpacing(2)
         self._item_name = QLabel("")
-        self._item_name.setStyleSheet(
-            f"color: {C.TEXT}; font-size: 13px; font-weight: 600; background: transparent;"
-        )
+        self._item_name.setStyleSheet(style.label(self._item_name, C.TEXT, size=13, weight=600))
         self._item_status = QLabel("")
-        self._item_status.setStyleSheet(_DIM_TEXT_QSS)
+        self._item_status.setStyleSheet(style.label(self._item_status, "#b8bcbf"))
         col.addWidget(self._item_name)
         col.addWidget(self._item_status)
         item_lay.addLayout(col)
@@ -279,9 +265,7 @@ class DownloadsPage(QWidget):
         queue.addWidget(self._item)
 
         self._empty = QLabel("No active downloads")
-        self._empty.setStyleSheet(
-            f"color: {C.TEXT_DIM}; font-size: 13px; background: transparent;"
-        )
+        self._empty.setStyleSheet(style.label(self._empty, C.TEXT_DIM, size=13))
         self._empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
         queue.addWidget(self._empty)
 

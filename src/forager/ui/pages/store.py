@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from forager.ui.fonts import UI_FONT
+from forager.ui import style
 from forager.ui.theme import C, TAB_QSS
 
 _STORES = ("Steam", "Epic Games", "GOG", "itch.io")
@@ -21,14 +22,14 @@ _STORES = ("Steam", "Epic Games", "GOG", "itch.io")
 class StorePage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setStyleSheet(f"background-color: {C.BG};")
+        self.setStyleSheet(style.bg())
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 18, 24, 18)
         layout.setSpacing(12)
 
         header = QLabel("Store")
         header.setFont(QFont(UI_FONT, 22, QFont.Weight.Bold))
-        header.setStyleSheet(f"color: {C.TEXT}; background: transparent;")
+        header.setStyleSheet(style.label(header, C.TEXT))
         layout.addWidget(header)
 
         self._stack = QStackedWidget()
@@ -39,9 +40,7 @@ class StorePage(QWidget):
 
     def _build_tabs(self) -> QWidget:
         bar = QWidget()
-        bar.setStyleSheet(
-            f"background-color: {C.COLOR_2}; border-radius: {C.RADIUS}px;"
-        )
+        bar.setStyleSheet(style.surface_qss(2))
         bar_layout = QHBoxLayout(bar)
         bar_layout.setContentsMargins(6, 6, 6, 6)
         bar_layout.setSpacing(6)
@@ -72,15 +71,10 @@ class StorePage(QWidget):
         v.addStretch(1)
         store = QLabel(name)
         store.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        store.setStyleSheet(
-            f"color: {C.TEXT_DIM}; font-size: 22px; font-weight: 700;"
-            f"background: transparent;"
-        )
+        store.setStyleSheet(style.label(store, C.TEXT_DIM, size=22, weight=700))
         note = QLabel("Store integration coming soon")
         note.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        note.setStyleSheet(
-            f"color: {C.TEXT_DIM}; font-size: 13px; background: transparent;"
-        )
+        note.setStyleSheet(style.label(note, C.TEXT_DIM, size=13))
         v.addWidget(store)
         v.addWidget(note)
         v.addStretch(1)

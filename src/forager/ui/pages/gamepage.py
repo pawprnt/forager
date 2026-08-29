@@ -29,7 +29,7 @@ class GamePage(QWidget):
         self._logo: QPixmap | None = None
         self._running = False
 
-        self.setStyleSheet(f"background-color: {C.COLOR_1};")
+        self.setStyleSheet(style.surface(1))
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(16, 16, 16, 16)
@@ -38,10 +38,10 @@ class GamePage(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
-        scroll.setStyleSheet(f"QScrollArea {{ background: {C.COLOR_1}; border: none; }}")
+        scroll.setStyleSheet(f"QScrollArea {{ {style.surface(1)} border: none; }}")
 
         content = QWidget()
-        content.setStyleSheet(f"background: {C.COLOR_1};")
+        content.setStyleSheet(style.surface(1))
         v = QVBoxLayout(content)
         v.setContentsMargins(0, 0, 0, 16)
         v.setSpacing(16)
@@ -51,7 +51,7 @@ class GamePage(QWidget):
 
         self._title = QLabel("")
         self._title.setFont(QFont(UI_FONT, 26, QFont.Weight.Bold))
-        self._title.setStyleSheet(f"color: {C.TEXT}; background: transparent;")
+        self._title.setStyleSheet(style.label(self._title, C.TEXT))
         self._title.setWordWrap(True)
         v.addWidget(self._title)
 
@@ -71,10 +71,7 @@ class GamePage(QWidget):
         self._play_icon_label.setStyleSheet("background: transparent;")
         play_lay.addWidget(self._play_icon_label)
         self._play_text = QLabel("Play")
-        self._play_text.setStyleSheet(
-            f"background: transparent; color: #ffffff;"
-            f"font-size: 17px; font-weight: 600;"
-        )
+        self._play_text.setStyleSheet(style.label(self._play_text, "#ffffff", size=17, weight=600))
         play_lay.addWidget(self._play_text)
         play_lay.addStretch(1)
         self._play_btn.clicked.connect(self._on_play)
@@ -82,13 +79,14 @@ class GamePage(QWidget):
 
         self._source_badge = QLabel("")
         self._source_badge.setStyleSheet(
-            f"background-color: {C.COLOR_3}; color: {C.TEXT_DIM};"
-            f"border-radius: {C.RADIUS}px; padding: 6px 12px; font-size: 12px;"
+            style.label(self._source_badge, C.TEXT_DIM, size=12, padding="6px 12px")
+            + style.surface(3)
+            + f" border-radius: {C.RADIUS}px;"
         )
         info_row.addWidget(self._source_badge, alignment=Qt.AlignmentFlag.AlignVCenter)
 
         self._path_label = QLabel("")
-        self._path_label.setStyleSheet(f"color: {C.TEXT_DIM}; font-size: 12px; background: transparent;")
+        self._path_label.setStyleSheet(style.label(self._path_label, C.TEXT_DIM, size=12))
         self._path_label.setWordWrap(True)
         info_row.addWidget(self._path_label, stretch=1)
 
@@ -144,16 +142,13 @@ class GamePage(QWidget):
     def _build_info_box(self) -> QFrame:
         box = QFrame()
         box.setFixedWidth(300)
-        box.setStyleSheet(
-            f"QFrame {{ background-color: {C.COLOR_2}; border: none;"
-            f"border-radius: {C.RADIUS}px; }}"
-        )
+        box.setStyleSheet(style.panel(box, 2))
         v = QVBoxLayout(box)
         v.setContentsMargins(14, 12, 14, 12)
         v.setSpacing(10)
 
         header = QLabel("GAME INFO")
-        header.setStyleSheet(f"color: {C.TEXT_DIM}; font-size: 11px; font-weight: 700; letter-spacing: 1px;")
+        header.setStyleSheet(style.label(header, C.TEXT_DIM, size=11, weight=700, letter_spacing=1))
         v.addWidget(header)
 
         self._info_rows: dict[str, QLabel] = {}
@@ -161,10 +156,10 @@ class GamePage(QWidget):
             row = QHBoxLayout()
             row.setSpacing(8)
             k = QLabel(key.upper())
-            k.setStyleSheet(f"color: {C.TEXT_DIM}; font-size: 11px;")
+            k.setStyleSheet(style.label(k, C.TEXT_DIM, size=11))
             k.setFixedWidth(70)
             val = QLabel("")
-            val.setStyleSheet(f"color: {C.TEXT}; font-size: 12px; background: transparent;")
+            val.setStyleSheet(style.label(val, C.TEXT, size=12))
             val.setWordWrap(True)
             row.addWidget(k)
             row.addWidget(val, stretch=1)

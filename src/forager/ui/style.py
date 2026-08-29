@@ -8,6 +8,11 @@ from forager.ui.theme import C
 RADIUS = C.RADIUS
 
 
+def bg() -> str:
+    """Background-color fragment for the app's root background (``C.BG``)."""
+    return f"background-color: {C.BG};"
+
+
 def surface(level: int = 2) -> str:
     """Background-color fragment for a SpaceTheme surface elevation step."""
     return f"background-color: {getattr(C, 'COLOR_' + str(level))};"
