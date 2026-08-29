@@ -7,6 +7,7 @@ installer downloads through the common Provider interface.
 from __future__ import annotations
 
 import json
+import time
 import urllib.request
 from pathlib import Path
 from typing import Callable, Optional
@@ -98,6 +99,8 @@ class GogProvider(Provider):
                 downloaded = 0
                 chunk_size = 1 << 16
                 speed = 0
+                last_done = 0
+                last_t = time.monotonic()
                 with open(out_path, "wb") as out:
                     while True:
                         if cancel is not None and getattr(cancel, "is_set", lambda: False)():
@@ -108,6 +111,11 @@ class GogProvider(Provider):
                         out.write(chunk)
                         downloaded += len(chunk)
                         percent = (downloaded / total * 100) if total else 0.0
+                        now = time.monotonic()
+                        dt = now - last_t
+                        if dt > 0:
+                            speed = int((downloaded - last_done) / dt)
+                        last_done, last_t = downloaded, now
                         if on_progress is not None:
                             on_progress(
                                 DownloadProgress("download", percent, downloaded, total, speed)
