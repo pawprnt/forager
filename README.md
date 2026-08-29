@@ -39,7 +39,7 @@ all roadmap items are implemented. remaining work before `v1.0.0` is polish, tes
 ### from flatpak
 
 ```
-flatpak remote-add --user forager https://raw.githubusercontent.com/pawprnt/forager/flatpak-repo/repo/flatpak.flatpakrepo
+flatpak remote-add --user forager https://raw.githubusercontent.com/pawprnt/flatpak-repo/main/forager/repo
 flatpak install --user forager io.github.pawprnt.forager
 flatpak run io.github.pawprnt.forager
 ```

@@ -32,43 +32,27 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: flatpak-repo
-          fetch-depth: 0
-
       - name: Download bundle
         uses: actions/download-artifact@v4
         with:
           name: forager-flatpak
 
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6
+      - uses: actions/checkout@v4
         with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          repository: pawprnt/flatpak-repo
+          token: ${{ secrets.FLATPAK_REPO_TOKEN }}
+          fetch-depth: 0
 
-      - name: Setup repo
+      - name: Update repo
         run: |
-          mkdir -p repo
-          if [ -f repo/forager.flatpak ]; then
-            mv repo/forager.flatpak repo/forager-old.flatpak
-          fi
-          mv forager.flatpak repo/
-          flatpak build-update-repo --generate-static-delta --prune --no-summary-index repo
-
-          cat > repo/flatpak.flatpakrepo <<EOF
-          [Flatpak Repo]
-          Title=Forager
-          Description=Game library manager
-          Url=https://raw.githubusercontent.com/${{ github.repository }}/flatpak-repo/repo
-          GPGKey=$(gpg --export --armor | sed ':a;N;$!ba;s/\n/\\n/g')
-          EOF
+          mkdir -p forager/repo
+          mv forager.flatpak forager/repo/
+          flatpak build-update-repo --generate-static-delta --prune --no-summary-index forager/repo
 
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "update flatpak repo" || exit 0
+          git commit -m "update forager" || exit 0
           git push
