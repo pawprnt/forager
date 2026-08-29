@@ -25,7 +25,7 @@ jobs:
 
       - name: Clone flatpak-repo
         run: |
-          git clone https://x-access-token:${{ secrets.FLATPAK_REPO_TOKEN }}@github.com/pawprnt/flatpak-repo.git /tmp/flatpak-repo
+          git clone https://x-access-token:${{ secrets.FLATPAK_GITHUB_TOKEN }}@github.com/pawprnt/flatpak-repo.git /tmp/flatpak-repo
 
       - name: Update repo
         run: |
