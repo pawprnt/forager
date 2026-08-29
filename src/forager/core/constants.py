@@ -7,7 +7,7 @@ from __future__ import annotations
 
 APP_NAME = "forager"
 ORG_NAME = "forager"
-VERSION = "0.2.0"
+VERSION = "0.5.0"
 
 # Keyring service used by the Steam account store and the SteamGridDB token
 # store (see forager.providers.steam.account and forager.services.steamgriddb).
