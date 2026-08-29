@@ -1,0 +1,12 @@
+name: Push to AUR
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  aur:
+    uses: pawprnt/.github/.github/workflows/aur-publish.yml@main
+    with:
+      pkgname: forager
+    secrets: inherit
