@@ -8,6 +8,3 @@ __pycache__
 *.egg-info/
 build/
 dist/
-
-# --- Development / Other --- #
-/tests
