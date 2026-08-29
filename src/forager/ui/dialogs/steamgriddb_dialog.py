@@ -110,6 +110,8 @@ class SteamGridDBTokenDialog(QDialog):
         self.reject()
 
     def closeEvent(self, event):
-        self._timer.stop()
-        self._view.stop()
+        if getattr(self, "_timer", None) is not None:
+            self._timer.stop()
+        if getattr(self, "_view", None) is not None:
+            self._view.stop()
         super().closeEvent(event)
