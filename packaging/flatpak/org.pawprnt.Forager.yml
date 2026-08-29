@@ -1,0 +1,23 @@
+app-id: org.pawprnt.Forager
+runtime: org.kde.Platform
+runtime-version: '6.8'
+sdk: org.kde.Sdk
+command: forager
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --talk-name=org.keyring
+  - --talk-name=org.freedesktop.secrets
+  - --filesystem=home
+  - --device=all
+modules:
+  - name: forager
+    buildsystem: simple
+    build-commands:
+      - pip3 install --no-deps --prefix=/app --no-build-isolation .
+    sources:
+      - type: archive
+        url: https://github.com/pawprnt/forager/archive/v0.5.0.tar.gz
+        sha256: d0f4eb26165b50e086fb36fefd8224d2a1ed3ca4f9a388f216d74f979364cef2

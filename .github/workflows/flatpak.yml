@@ -1,0 +1,15 @@
+name: Publish to Flathub
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  flatpak:
+    uses: pawprnt/.github/.github/workflows/flatpak-publish.yml@main
+    with:
+      app-id: org.pawprnt.Forager
+      manifest-path: packaging/flatpak/org.pawprnt.Forager.yml
+      flathub-repo: pawprnt/flathub
+    secrets: inherit
