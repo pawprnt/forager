@@ -17,8 +17,20 @@
     --st-yellow: 239, 141, 75;
     --st-yellow-hover: 239, 141, 75;
 }
+@font-face {
+    font-family: "FluentSystemIcons-Filled";
+    src: url("FONT_FILLED_URL") format("woff2");
+}
+@font-face {
+    font-family: "FluentSystemIcons-Regular";
+    src: url("FONT_REGULAR_URL") format("woff2");
+}
 #global_header,
 .responsive_page_frame.with_header > .responsive_page_menu_ctn.mainmenu {
+    display: none !important;
+}
+.responsive_page_frame .responsive_local_menu_tab,
+#responsive_store_nav_ctn {
     display: none !important;
 }
 /** Store */

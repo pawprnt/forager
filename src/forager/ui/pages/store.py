@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QButtonGroup, QStackedWidget,
@@ -31,11 +31,45 @@ _STORES = ("Steam", "Epic Games", "GOG", "itch.io")
 _STEAM_URL = "https://store.steampowered.com/"
 
 _CSS_PATH = Path(__file__).parent / "steam_store_theme.css"
-_STEAM_RECOLOR_JS = (
-    "var s=document.createElement('style');"
-    "s.textContent=%s;"
-    "document.head.appendChild(s);"
-) % json.dumps(_CSS_PATH.read_text())
+_FONTS_DIR = Path(__file__).parent / "fonts"
+
+
+def _build_recolor_js() -> str:
+    css_text = _CSS_PATH.read_text()
+    filled = QUrl.fromLocalFile(
+        str(_FONTS_DIR / "FluentSystemIcons-Filled.woff2")
+    ).toString()
+    regular = QUrl.fromLocalFile(
+        str(_FONTS_DIR / "FluentSystemIcons-Regular.woff2")
+    ).toString()
+    css_text = css_text.replace("FONT_FILLED_URL", filled)
+    css_text = css_text.replace("FONT_REGULAR_URL", regular)
+    css_json = json.dumps(css_text)
+    return (
+        "(function(){"
+        "var old=document.getElementById('spacetheme-css');"
+        "if(old)old.remove();"
+        "var s=document.createElement('style');"
+        "s.id='spacetheme-css';"
+        "s.textContent=" + css_json + ";"
+        "document.head.appendChild(s);"
+        "})()"
+    )
+
+
+_STEAM_RECOLOR_JS = _build_recolor_js()
+
+_MUTATION_OBSERVER_JS = (
+    "(function(){"
+    "if(window.__spacetheme_observer)return;"
+    "window.__spacetheme_observer=true;"
+    "var reinject=function(){"
+    "if(!document.getElementById('spacetheme-css')){" + _STEAM_RECOLOR_JS + "}"
+    "};"
+    "var obs=new MutationObserver(reinject);"
+    "obs.observe(document.documentElement,{childList:true,subtree:true});"
+    "})()"
+)
 
 
 class WebStorePane(QWidget):
@@ -43,28 +77,60 @@ class WebStorePane(QWidget):
 
     def __init__(self, url: str, parent=None):
         super().__init__(parent)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        self._layout = QVBoxLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
         if QWebEngineView is None:
-            note = QLabel("PySide6-WebEngine is not installed.\nInstall it to browse the store in-app.")
+            note = QLabel(
+                "PySide6-WebEngine is not installed.\n"
+                "Install it to browse the store in-app."
+            )
             note.setAlignment(Qt.AlignmentFlag.AlignCenter)
             style.label(note, C.TEXT_DIM, size=14)
-            layout.addWidget(note)
+            self._layout.addWidget(note)
             self._view = None
             return
         self._view = QWebEngineView()
         self._view.setStyleSheet("background-color: #111111;")
+        self._view.setVisible(False)
         self._view.loadFinished.connect(self._on_load_finished)
-        layout.addWidget(self._view)
+        self._layout.addWidget(self._view)
         self._url = url
+        self._css_injected = False
 
     def load(self):
         if self._view is not None:
+            self._css_injected = False
+            self._view.setVisible(False)
             self._view.load(self._url)
 
     def _on_load_finished(self, ok: bool):
-        if self._view is not None and ok:
-            self._view.page().runJavaScript(_STEAM_RECOLOR_JS)
+        if self._view is None or not ok:
+            return
+        self._view.page().runJavaScript(_STEAM_RECOLOR_JS)
+        self._view.page().runJavaScript(_MUTATION_OBSERVER_JS)
+        self._view.page().runJavaScript(
+            "document.getElementById('spacetheme-css') !== null",
+            lambda found: self._on_css_ready(found),
+        )
+
+    def _on_css_ready(self, found: bool):
+        if found and not self._css_injected:
+            self._css_injected = True
+            self._view.setVisible(True)
+        elif not found:
+            from PySide6.QtCore import QTimer
+            QTimer.singleShot(200, self._retry_css)
+
+    def _retry_css(self):
+        if self._view is None or self._css_injected:
+            return
+        self._view.page().runJavaScript(_STEAM_RECOLOR_JS)
+        self._view.page().runJavaScript(_MUTATION_OBSERVER_JS)
+        self._view.page().runJavaScript(
+            "document.getElementById('spacetheme-css') !== null",
+            lambda found: self._on_css_ready(found),
+        )
 
 
 class StorePage(QWidget):
