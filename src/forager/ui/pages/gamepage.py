@@ -13,15 +13,34 @@ from forager.ui.widgets.banner import Banner
 from forager.ui.theme import C
 from forager.ui.icons import load_icon as load_bundled_icon
 
+_PLAY_QSS = f"""
+QPushButton {{
+    background-color: {C.GREEN}; border: none;
+    border-radius: {C.RADIUS}px;
+}}
+QPushButton:hover {{ background-color: {C.GREEN_HOVER}; }}
+QPushButton:disabled {{ background-color: {C.COLOR_3}; }}
+"""
+
+_RUNNING_QSS = f"""
+QPushButton {{
+    background-color: {C.COLOR_3}; border: none;
+    border-radius: {C.RADIUS}px;
+}}
+QPushButton:hover {{ background-color: {C.COLOR_4}; }}
+"""
+
 
 class GamePage(QWidget):
     play = Signal(object)
+    stop = Signal(object)
     back_requested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.game: Game | None = None
         self._logo: QPixmap | None = None
+        self._running = False
 
         self.setStyleSheet(f"background-color: {C.COLOR_1};")
 
@@ -56,29 +75,20 @@ class GamePage(QWidget):
         self._play_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._play_btn.setFixedHeight(48)
         self._play_btn.setMinimumWidth(220)
-        self._play_btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {C.GREEN}; border: none;
-                border-radius: {C.RADIUS}px;
-            }}
-            QPushButton:hover {{ background-color: {C.GREEN_HOVER}; }}
-            QPushButton:disabled {{ background-color: {C.COLOR_3}; }}
-            """
-        )
+        self._play_btn.setStyleSheet(_PLAY_QSS)
         play_lay = QHBoxLayout(self._play_btn)
         play_lay.setContentsMargins(20, 0, 16, 0)
         play_lay.setSpacing(5)
-        play_icon = QLabel()
-        play_icon.setPixmap(load_bundled_icon("play", "#ffffff").pixmap(20, 20))
-        play_icon.setStyleSheet("background: transparent;")
-        play_lay.addWidget(play_icon)
-        play_text = QLabel("Play")
-        play_text.setStyleSheet(
+        self._play_icon_label = QLabel()
+        self._play_icon_label.setPixmap(load_bundled_icon("play", "#ffffff").pixmap(20, 20))
+        self._play_icon_label.setStyleSheet("background: transparent;")
+        play_lay.addWidget(self._play_icon_label)
+        self._play_text = QLabel("Play")
+        self._play_text.setStyleSheet(
             f"background: transparent; color: #ffffff;"
             f"font-size: 17px; font-weight: 600;"
         )
-        play_lay.addWidget(play_text)
+        play_lay.addWidget(self._play_text)
         play_lay.addStretch(1)
         self._play_btn.clicked.connect(self._on_play)
         info_row.addWidget(self._play_btn)
@@ -178,7 +188,11 @@ class GamePage(QWidget):
         return box
 
     def _on_play(self):
-        if self.game is not None:
+        if self.game is None:
+            return
+        if self._running:
+            self.stop.emit(self.game)
+        else:
             self.play.emit(self.game)
 
     def set_game(self, game: Game):
@@ -208,6 +222,19 @@ class GamePage(QWidget):
         self._path_label.setText(game.display_path)
         self._info_rows["source"].setText(game.source_name)
         self._info_rows["app_id"].setText(game.app_id or "—")
+
+    def set_running(self, running: bool) -> None:
+        if running == self._running:
+            return
+        self._running = running
+        if running:
+            self._play_btn.setStyleSheet(_RUNNING_QSS)
+            self._play_icon_label.setPixmap(load_bundled_icon("stop", "#ffffff").pixmap(20, 20))
+            self._play_text.setText("Stop")
+        else:
+            self._play_btn.setStyleSheet(_PLAY_QSS)
+            self._play_icon_label.setPixmap(load_bundled_icon("play", "#ffffff").pixmap(20, 20))
+            self._play_text.setText("Play")
 
     def set_hero(self, pix: QPixmap | None):
         if pix is None:

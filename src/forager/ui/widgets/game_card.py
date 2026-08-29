@@ -17,9 +17,11 @@ from PySide6.QtWidgets import QWidget
 from forager.core.game import Game
 from forager.artwork import pipeline as art
 from forager.ui.fonts import UI_FONT
-from forager.ui.theme import C
+from forager.ui.theme import C, resolve_card_size
 
 _RADIUS = C.RADIUS
+
+CARD_W, CARD_H = resolve_card_size("medium")
 
 _HOVER_ZOOM = 0.045  # cover scales to 1.045 while hovered
 _HOVER_DURATION = 0.18  # seconds for the fade in/out

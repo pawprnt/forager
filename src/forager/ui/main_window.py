@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QThread, QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QMessageBox,
-    QStackedWidget, QApplication, QFrame,
+    QStackedWidget, QApplication, QFrame, QLabel,
 )
 
 from forager.core.game import Game
@@ -15,7 +15,7 @@ from forager.library.launcher import launch
 from forager.library.playtime import PlaytimeTracker
 from forager.core.controller import ControllerPoller
 from forager.artwork.pixmap_utils import bytes_to_pixmap
-from forager.ui.theme import PAGE_BG, PANEL_QSS
+from forager.ui.theme import PAGE_BG, PANEL_QSS, C
 from forager.ui.widgets.sidebar import Sidebar
 from forager.ui.widgets.titlebar import TitleBar
 from forager.ui.widgets.recent import RecentPlayedRow
@@ -26,6 +26,7 @@ from forager.ui.theme import resolve_card_size
 from forager.ui.pages.downloads import DownloadsPage
 from forager.ui.pages.store import StorePage
 from forager.ui.widgets.controller_nav import GamepadNavigation
+from forager.ui.widgets.loading_spinner import LoadingSpinner
 from forager.ui.workers import (
     ScanWorker, ProtonUpdateWorker,
     ToolUpdateWorker,
@@ -149,7 +150,46 @@ class MainWindow(QMainWindow):
         self._downloads_page.cancel_requested.connect(self._cancel_proton_update)
         self._titlebar.run_updates_requested.connect(self._run_tool_updates)
         self._gamepage.play.connect(self._launch_game)
+        self._gamepage.stop.connect(self._stop_game)
         self._gamepage.back_requested.connect(self._show_home)
+
+        self._loading = self._build_loading()
+        self._loading.setParent(central)
+        self._loading.raise_()
+        self._loading.hide()
+
+    def _build_loading(self) -> QWidget:
+        overlay = QWidget(self.centralWidget())
+        overlay.setStyleSheet(f"background-color: {C.COLOR_1};")
+        lay = QVBoxLayout(overlay)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(18)
+        lay.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        spinner = LoadingSpinner()
+        lay.addWidget(spinner, alignment=Qt.AlignmentFlag.AlignCenter)
+        label = QLabel("loading your library…")
+        label.setStyleSheet(f"color: {C.TEXT_DIM}; font-size: 14px; background: transparent;")
+        lay.addWidget(label, alignment=Qt.AlignmentFlag.AlignCenter)
+        return overlay
+
+    def _position_loading(self):
+        central = self.centralWidget()
+        if central is not None:
+            self._loading.setGeometry(central.rect())
+
+    def _show_loading(self):
+        self._position_loading()
+        self._loading.show()
+        self._loading.raise_()
+
+    def _hide_loading(self):
+        self._loading.hide()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        loading = getattr(self, "_loading", None)
+        if loading is not None and loading.isVisible():
+            self._position_loading()
 
     def _build_home(self) -> QWidget:
         page = QFrame()
@@ -233,6 +273,7 @@ class MainWindow(QMainWindow):
     def _load_games(self):
         if getattr(self, "_closed", False):
             return
+        self._show_loading()
         self._scan_done = False
         self._worker = ScanWorker()
         self._worker.done.connect(self._on_games_scanned)
@@ -250,6 +291,7 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(100, self._check_done)
 
     def _finish_loading(self):
+        self._hide_loading()
         self._sidebar.set_games(self._games)
         self._grid.set_games(self._games)
         self._recent.set_games(self._games)
@@ -306,6 +348,7 @@ class MainWindow(QMainWindow):
 
     def _open_game(self, game: Game):
         self._gamepage.set_game(game)
+        self._gamepage.set_running(self._playtime.is_running(game))
         self._content.setCurrentWidget(self._gamepage)
         self._titlebar.set_back_enabled(True)
         self._titlebar.set_active_tab("library")
@@ -340,11 +383,22 @@ class MainWindow(QMainWindow):
         self._playtime.begin(game, proc)
         self._recent.refresh()
         self._update_grid_panel()
+        if self._gamepage.game == game:
+            self._gamepage.set_running(self._playtime.is_running(game))
+
+    def _stop_game(self, game: Game):
+        self._playtime.stop(game)
+        self._recent.refresh()
+        self._update_grid_panel()
+        if self._gamepage.game == game:
+            self._gamepage.set_running(self._playtime.is_running(game))
 
     def _play_tick(self):
         if self._playtime.tick():
             self._recent.refresh()
             self._update_grid_panel()
+        if self._gamepage.game is not None:
+            self._gamepage.set_running(self._playtime.is_running(self._gamepage.game))
 
     def _update_proton(self):
         self._proton_cancel = threading.Event()

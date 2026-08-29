@@ -146,6 +146,36 @@ class PlaytimeTracker:
         self._sessions.clear()
         self._store.save()
 
+    def is_running(self, game: Game) -> bool:
+        key = game_key(game)
+        sess = self._sessions.get(key)
+        if sess is None:
+            return False
+        proc = sess["proc"]
+        return proc is not None and proc.poll() is None
+
+    def stop(self, game: Game) -> bool:
+        """Terminate the running session for ``game``, if any.
+
+        Returns True when a live process was actually terminated. The final
+        time chunk is recorded and the session is dropped.
+        """
+        key = game_key(game)
+        sess = self._sessions.get(key)
+        if sess is None:
+            return False
+        proc = sess["proc"]
+        if proc is not None and proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+            self._store.add(key, max(0.0, time.time() - sess["last"]))
+        del self._sessions[key]
+        self._store.save()
+        return True
+
     def recently_played(self, games: list[Game], limit: int = 8) -> list[Game]:
         """Games with a last-played stamp, newest first."""
         ranked = [
