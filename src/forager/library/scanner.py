@@ -18,7 +18,7 @@ STEAM_TOOL_APP_IDS = {
 
 def scan_all() -> list[Game]:
     seen: set[Game] = set()
-    for scanner in (_scan_steam, _scan_minecraft, _scan_standalone):
+    for scanner in (_scan_steam, _scan_minecraft, _scan_standalone, _scan_owned_steam):
         for game in scanner():
             if game not in seen:
                 seen.add(game)
@@ -48,6 +48,29 @@ def _scan_steam() -> list[Game]:
                     sort_key=name.lower(),
                 )
             )
+    return games
+
+
+def _scan_owned_steam() -> list[Game]:
+    """Owned-but-not-installed Steam titles (roadmap item 2).
+
+    Merged with the installed set by ``scan_all``; installed copies take
+    precedence because ``Game.__eq__`` keys on ``app_id``.
+    """
+    from forager.providers.steam.library import owned_games
+
+    games: list[Game] = []
+    for entry in owned_games():
+        games.append(
+            Game(
+                name=entry["name"],
+                source=Source.STEAM,
+                path=None,
+                app_id=entry["appid"],
+                installed=False,
+                sort_key=entry["name"].lower(),
+            )
+        )
     return games
 
 

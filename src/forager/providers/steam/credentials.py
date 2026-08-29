@@ -23,6 +23,9 @@ KEYRING_PASSWORD_KEY = "steam_password"
 KEYRING_LOGIN_METHOD_KEY = "steam_login_method"
 KEYRING_STEAMID_KEY = "steamid"
 KEYRING_LOGIN_SECURE_KEY = "steam_login_secure"
+KEYRING_STEAM_API_KEY = "steam_web_api_key"
+
+KEYRING_GOG_TOKEN_KEY = "gog_token"
 
 
 # ── read ───────────────────────────────────────────────────────────────
@@ -89,6 +92,36 @@ def get_login_secure() -> str | None:
     return None
 
 
+def get_steam_web_api_key() -> str | None:
+    if _keyring is not None:
+        try:
+            stored = _keyring.get_password(KEYRING_SERVICE, KEYRING_STEAM_API_KEY)
+            if stored:
+                return stored
+        except Exception:
+            pass
+    return None
+
+
+def set_steam_web_api_key(key: str) -> None:
+    if _keyring is None:
+        raise RuntimeError("keyring backend unavailable")
+    _keyring.set_password(KEYRING_SERVICE, KEYRING_STEAM_API_KEY, key)
+
+
+def clear_steam_web_api_key() -> None:
+    if _keyring is None:
+        return
+    try:
+        _keyring.delete_password(KEYRING_SERVICE, KEYRING_STEAM_API_KEY)
+    except Exception:
+        pass
+
+
+def has_api_key() -> bool:
+    return bool(get_steam_web_api_key())
+
+
 # ── write ──────────────────────────────────────────────────────────────
 
 def set_credentials(username: str, password: str) -> None:
@@ -144,6 +177,34 @@ def set_steam_session(
                 _keyring.delete_password(KEYRING_SERVICE, key)
             except Exception:
                 pass
+
+
+# ── gog token ──────────────────────────────────────────────────────────
+
+def get_gog_token() -> str | None:
+    if _keyring is not None:
+        try:
+            token = _keyring.get_password(KEYRING_SERVICE, KEYRING_GOG_TOKEN_KEY)
+            if token:
+                return token
+        except Exception:
+            pass
+    return None
+
+
+def set_gog_token(token: str) -> None:
+    if _keyring is None:
+        raise RuntimeError("keyring backend unavailable")
+    _keyring.set_password(KEYRING_SERVICE, KEYRING_GOG_TOKEN_KEY, token)
+
+
+def clear_gog_token() -> None:
+    if _keyring is None:
+        return
+    try:
+        _keyring.delete_password(KEYRING_SERVICE, KEYRING_GOG_TOKEN_KEY)
+    except Exception:
+        pass
 
 
 # ── delete ─────────────────────────────────────────────────────────────

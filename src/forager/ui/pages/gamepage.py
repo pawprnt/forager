@@ -26,6 +26,7 @@ _RUNNING_QSS = style.button_qss("running")
 class GamePage(QWidget):
     play = Signal(object)
     stop = Signal(object)
+    install = Signal(object)
     back_requested = Signal()
 
     def __init__(self, parent=None):
@@ -181,6 +182,9 @@ class GamePage(QWidget):
     def _on_play(self):
         if self.game is None:
             return
+        if not self.game.installed or self.game.path is None:
+            self.install.emit(self.game)
+            return
         if self._running:
             self.stop.emit(self.game)
         else:
@@ -254,6 +258,16 @@ class GamePage(QWidget):
         self._info_rows["source"].setText(game.source_name)
         self._info_rows["app_id"].setText(game.app_id or "—")
         self._populate_achievements(game)
+
+        installed = game.installed and game.path is not None
+        if installed:
+            self._play_btn.setStyleSheet(_PLAY_QSS)
+            self._play_icon_label.setPixmap(load_bundled_icon("play", "#ffffff").pixmap(20, 20))
+            self._play_text.setText("Play" if not self._running else "Stop")
+        else:
+            self._play_btn.setStyleSheet(_PLAY_QSS)
+            self._play_icon_label.setPixmap(load_bundled_icon("box", "#ffffff").pixmap(20, 20))
+            self._play_text.setText("Install")
 
     def set_running(self, running: bool) -> None:
         if running == self._running:

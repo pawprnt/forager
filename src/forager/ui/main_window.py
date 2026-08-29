@@ -33,10 +33,11 @@ from forager.ui.workers import (
     ToolUpdateWorker,
     ArtSignals, HeroSignals, _art_job, _hero_job,
     ToolUpdateSignals, _tool_update_check_job,
+    DownloadWorker,
 )
 
 _WORKER_ATTRS = (
-    "_worker", "_update_runner", "_proton_worker",
+    "_worker", "_update_runner", "_proton_worker", "_download_worker",
 )
 
 _GRID_PANEL_PAD = 14 + 16          # panel top + bottom padding
@@ -152,6 +153,7 @@ class MainWindow(QMainWindow):
         self._titlebar.run_updates_requested.connect(self._run_tool_updates)
         self._gamepage.play.connect(self._launch_game)
         self._gamepage.stop.connect(self._stop_game)
+        self._gamepage.install.connect(self._install_game)
         self._gamepage.back_requested.connect(self._show_home)
 
         self._loading = self._build_loading()
@@ -393,6 +395,33 @@ class MainWindow(QMainWindow):
         self._update_grid_panel()
         if self._gamepage.game == game:
             self._gamepage.set_running(self._playtime.is_running(game))
+
+    def _install_game(self, game: Game):
+        if not game.app_id:
+            QMessageBox.critical(self, "Install Error", "This game has no store ID to download.")
+            return
+        from forager.core.config import settings
+
+        dest = settings.games_dir / "steam" / "steamapps"
+        self._status_show(f"Downloading {game.name}…")
+        self._sidebar.begin_download(game.name)
+        self._downloads_page.begin(game.name)
+        self._show_downloads()
+        self._download_worker = DownloadWorker("steam", game.app_id, str(dest), parent=self)
+        self._download_worker.progress.connect(self._on_download_progress)
+        self._download_worker.done.connect(self._on_install_done)
+        self._download_worker.start()
+
+    def _on_install_done(self, ok: bool, result: str):
+        self._sidebar.hide_download()
+        if ok:
+            self._status_show(f"Download complete: {result}")
+            self._downloads_page.complete(result)
+            self._reload_library()
+        else:
+            self._status_show("Download failed")
+            self._downloads_page.failed(result)
+            QMessageBox.warning(self, "Download Failed", result)
 
     def _play_tick(self):
         if self._playtime.tick():

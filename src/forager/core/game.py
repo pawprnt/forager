@@ -23,11 +23,12 @@ class Source(Enum):
 class Game:
     name: str
     source: Source
-    path: Path
+    path: Path | None = None
     app_id: str | None = None
     launch_cmd: list[str] | None = None
     sort_key: str | None = None
     search_names: list[str] | None = None
+    installed: bool = True
 
     def __hash__(self):
         return hash((self.source, self.app_id or str(self.path)))
@@ -52,7 +53,9 @@ class Game:
     def display_path(self) -> str:
         """Path shown in the UI: relative to the games directory starting at
         the holder folder (e.g. ``drm-free/series/…``), else the absolute
-        path."""
+        path.  Owned-but-uninstalled games have no path and show a dash."""
+        if self.path is None:
+            return "—"
         try:
             rel = self.path.resolve().relative_to(games_dir())
             return "/".join(rel.parts)
@@ -72,6 +75,8 @@ class Game:
         """
         if self.search_names:
             return (list(self.search_names), "")
+        if self.path is None:
+            return None
         if self.source == Source.STEAM:
             return None
         try:

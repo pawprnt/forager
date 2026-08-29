@@ -10,6 +10,7 @@ from PySide6.QtCore import QThread, QObject, Signal
 
 from forager.core.game import Game
 from forager.library.scanner import scan_all
+from forager.providers.base import get_provider, BackendNotConfigured
 
 
 class ScanWorker(QThread):
@@ -115,3 +116,41 @@ def _hero_job(game: Game, signals: HeroSignals, stop_event: threading.Event):
     data = art.load_hero_bytes(game)
     if data:
         signals.ready.emit((game, data))
+
+
+class DownloadWorker(QThread):
+    """Download a game through a registered provider in the background.
+
+    Emits ``progress`` with ``DownloadProgress`` objects and ``done`` with
+    ``(ok, message)`` when finished.
+    """
+
+    progress = Signal(object)
+    done = Signal(bool, str)
+
+    def __init__(self, provider_name: str, app_id: str, destination: str, cancel_event=None, parent=None):
+        super().__init__(parent)
+        self._provider = provider_name
+        self._app_id = app_id
+        self._dest = destination
+        self._cancel = cancel_event or threading.Event()
+
+    def run(self):
+        from forager.compatibility.proton import DownloadCancelled
+
+        try:
+            provider = get_provider(self._provider)
+            provider.download(
+                self._app_id,
+                self._dest,
+                on_progress=self.progress.emit,
+                cancel=self._cancel,
+            )
+        except BackendNotConfigured as e:
+            self.done.emit(False, str(e))
+        except DownloadCancelled:
+            self.done.emit(False, "Download cancelled")
+        except Exception as e:
+            self.done.emit(False, str(e))
+        else:
+            self.done.emit(True, "Download complete")

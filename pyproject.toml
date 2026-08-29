@@ -19,6 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]
+store = ["PySide6-WebEngine"]
 
 [project.scripts]
 forager = "forager.main:main"
