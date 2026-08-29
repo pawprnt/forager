@@ -14,12 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install runtime
+        run: |
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive -y flathub org.kde.Platform//6.8 org.kde.Sdk//6.8
+
       - name: Build
-        id: flatpak
-        uses: andyholmes/flatter@main
-        with:
-          files: packaging/flatpak/io.github.pawprnt.forager.yml
-          upload-bundles: true
+        run: |
+          flatpak-builder --user --force-clean --disable-rofiles-fuse --repo=repo _build packaging/flatpak/io.github.pawprnt.forager.yml
 
       - name: Clone flatpak-repo
         run: |
@@ -28,7 +30,7 @@ jobs:
       - name: Update repo
         run: |
           mkdir -p /tmp/flatpak-repo/forager
-          cp -r ${{ steps.flatpak.outputs.repository }} /tmp/flatpak-repo/forager/repo
+          cp -r repo /tmp/flatpak-repo/forager/repo
           flatpak build-update-repo --generate-static-delta --prune /tmp/flatpak-repo/forager/repo
 
       - name: Push
