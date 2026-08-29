@@ -101,25 +101,29 @@ class GogProvider(Provider):
                 speed = 0
                 last_done = 0
                 last_t = time.monotonic()
-                with open(out_path, "wb") as out:
-                    while True:
-                        if cancel is not None and getattr(cancel, "is_set", lambda: False)():
-                            raise ProviderError("Download cancelled")
-                        chunk = resp.read(chunk_size)
-                        if not chunk:
-                            break
-                        out.write(chunk)
-                        downloaded += len(chunk)
-                        percent = (downloaded / total * 100) if total else 0.0
-                        now = time.monotonic()
-                        dt = now - last_t
-                        if dt > 0:
-                            speed = int((downloaded - last_done) / dt)
-                        last_done, last_t = downloaded, now
-                        if on_progress is not None:
-                            on_progress(
-                                DownloadProgress("download", percent, downloaded, total, speed)
-                            )
+                try:
+                    with open(out_path, "wb") as out:
+                        while True:
+                            if cancel is not None and getattr(cancel, "is_set", lambda: False)():
+                                raise ProviderError("Download cancelled")
+                            chunk = resp.read(chunk_size)
+                            if not chunk:
+                                break
+                            out.write(chunk)
+                            downloaded += len(chunk)
+                            percent = (downloaded / total * 100) if total else 0.0
+                            now = time.monotonic()
+                            dt = now - last_t
+                            if dt > 0:
+                                speed = int((downloaded - last_done) / dt)
+                            last_done, last_t = downloaded, now
+                            if on_progress is not None:
+                                on_progress(
+                                    DownloadProgress("download", percent, downloaded, total, speed)
+                                )
+                except ProviderError:
+                    out_path.unlink(missing_ok=True)
+                    raise
         except ProviderError:
             raise
         except Exception as exc:

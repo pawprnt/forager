@@ -430,6 +430,9 @@ class MainWindow(QMainWindow):
             if page is not None and page.game is not None:
                 self._pending_install_appid = page.game.app_id
             self._reload_library()
+        elif result == "Download cancelled":
+            self._status_show("Download cancelled")
+            self._downloads_page.cancelled()
         else:
             self._status_show("Download failed")
             self._downloads_page.failed(result)
