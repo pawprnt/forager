@@ -1,0 +1,15 @@
+name: Publish to Nix Registry
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  nix-publish:
+    uses: pawprnt/.github/.github/workflows/nix-publish.yml@main
+    with:
+      pkgname: forager
+      nixpkgs-repo: pawprnt/nixpkgs
+    secrets:
+      NIX_GITHUB_TOKEN: ${{ secrets.NIX_GITHUB_TOKEN }}
