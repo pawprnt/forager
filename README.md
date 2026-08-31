@@ -36,12 +36,26 @@ all roadmap items are implemented. remaining work before `v1.0.0` is polish, tes
 
 ## install
 
-### from flatpak
+### nixos
 
+add to your flake inputs:
+
+```nix
+inputs = {
+  nixpkgs.url = "github:pawprnt/nixpkgs";
+};
 ```
-flatpak remote-add --user pawprnt https://pawprnt.github.io/flatpak-repo/repo
-flatpak install --user pawprnt io.github.pawprnt.forager
-flatpak run io.github.pawprnt.forager
+
+then install:
+
+```nix
+environment.systemPackages = [ inputs.nixpkgs.packages.${system}.forager ];
+```
+
+or run directly:
+
+```bash
+nix run github:pawprnt/nixpkgs#forager
 ```
 
 ### from the aur (arch linux)
@@ -50,7 +64,15 @@ flatpak run io.github.pawprnt.forager
 paru -S forager
 ```
 
-### from source
+### from flatpak
+
+```
+flatpak remote-add --user pawprnt https://pawprnt.github.io/flatpak-repo/repo
+flatpak install --user pawprnt io.github.pawprnt.forager
+flatpak run io.github.pawprnt.forager
+```
+
+### manual
 
 ```
 git clone https://github.com/pawprnt/forager.git
@@ -58,16 +80,6 @@ cd forager
 python -m venv .venv
 .venv/bin/pip install -e .
 .venv/bin/forager
-```
-
-### system-wide (arch linux)
-
-```
-sudo pacman -S python-pyside6 python-evdev python-keyring python-pillow
-git clone https://github.com/pawprnt/forager.git
-cd forager
-sudo python -m pip install --break-system-packages --no-deps .
-forager
 ```
 
 ## configuration
