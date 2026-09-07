@@ -23,6 +23,8 @@ from forager.compatibility.proton import (
 )
 
 LOGIN_TIMEOUT = 180.0
+_LOG_LIMIT = 200
+_LOG_TRIM = 100
 
 _GUARD_MARKERS = (
     "steam guard",
@@ -77,24 +79,38 @@ def _run_dd(
     timeout: float,
     cancel_event: threading.Event | None = None,
     on_line: Callable[[str], None] | None = None,
+    stdin_writer: Callable[[str], None] | None = None,
+    stdin_payload: str | None = None,
 ) -> tuple[list[str], str, int, bool]:
     """Run DepotDownloader from DEPOTDL_DIR.
 
     Calls ``on_line(line)`` for every completed line of combined output.
+    When ``stdin_writer`` is set, the process stdin is kept open and
+    ``stdin_writer(line)`` is called whenever the process writes a line
+    containing a guard marker — it should write the guard code to stdin.
     Returns ``(log, tail, returncode, cancelled)`` where ``tail`` is the
     trailing line fragment (prompts are written without a newline).
     """
     ensure_depotdownloader()
+    use_stdin = stdin_writer is not None or stdin_payload is not None
     proc = subprocess.Popen(
         cmd,
         cwd=str(DEPOTDL_DIR),
-        stdin=subprocess.PIPE,
+        stdin=subprocess.PIPE if use_stdin else None,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
     )
-    assert proc.stdout is not None
+    if stdin_payload is not None and proc.stdin is not None:
+        try:
+            proc.stdin.write(stdin_payload + "\n")
+            proc.stdin.flush()
+            proc.stdin.close()
+        except (BrokenPipeError, OSError):
+            pass
+    if proc.stdout is None:
+        raise RuntimeError("DepotDownloader stdout pipe failed to open")
     fd = proc.stdout.fileno()
     buf = ""
     log: list[str] = []
@@ -119,16 +135,23 @@ def _run_dd(
                 line, buf = buf.split("\n", 1)
                 line = line.rstrip("\r")
                 log.append(line)
-                if len(log) > 200:
-                    log = log[-100:]
+                if len(log) > _LOG_LIMIT:
+                    log = log[-_LOG_TRIM:]
                 if on_line is not None:
                     on_line(line)
+                if stdin_writer is not None and any(m in line.lower() for m in _GUARD_MARKERS):
+                    stdin_writer(line.strip() or "Steam Guard authentication required")
         try:
             proc.wait(timeout=10)
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait()
     finally:
+        if proc.stdin is not None and not proc.stdin.closed:
+            try:
+                proc.stdin.close()
+            except Exception:
+                pass
         deadline_timer.cancel()
     return log, buf, proc.returncode, cancelled
 
@@ -147,84 +170,33 @@ def verify_login(
     Runs DepotDownloader from DEPOTDL_DIR so its ``account.config`` (refresh
     tokens / sentry data) persists across runs.
     """
-    ensure_depotdownloader()
     scratch = Path(tempfile.mkdtemp(prefix="forager-login-"))
-    proc: subprocess.Popen | None = None
     try:
-        proc = subprocess.Popen(
-            _login_cmd(username, password, remember, scratch),
-            cwd=str(DEPOTDL_DIR),
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
-        assert proc.stdout is not None and proc.stdin is not None
-        fd = proc.stdout.fileno()
-        buf = ""
-        log: list[str] = []
-        cancelled = False
-        deadline = threading.Event()
-        deadline_timer = threading.Timer(LOGIN_TIMEOUT, deadline.set)
-        deadline_timer.start()
-        try:
-            while proc.poll() is None:
-                if deadline.is_set():
-                    proc.terminate()
-                    break
-                if cancel_event is not None and cancel_event.is_set():
-                    proc.terminate()
-                    break
-                r, _, _ = select.select([fd], [], [], 0.5)
-                if not r:
-                    continue
-                data = os.read(fd, 4096)
-                if not data:
-                    break
-                buf += data.decode("utf-8", errors="replace")
-                while "\n" in buf:
-                    line, buf = buf.split("\n", 1)
-                    log.append(line.rstrip())
-                    if len(log) > 200:
-                        log = log[-100:]
-                lower = buf.lower()
-                if any(marker in lower for marker in _GUARD_MARKERS):
-                    prompt = buf.strip() or "Steam Guard authentication required"
-                    code = guard_prompt(prompt)
-                    if not code:
-                        cancelled = True
-                        try:
-                            proc.stdin.close()
-                        except Exception:
-                            pass
-                        break
-                    try:
-                        proc.stdin.write(code + "\n")
-                        proc.stdin.flush()
-                    except (BrokenPipeError, OSError):
-                        break
-                    buf = ""
-        finally:
-            deadline_timer.cancel()
+        def _guard_writer(prompt: str) -> None:
+            code = guard_prompt(prompt)
+            if not code or proc is None or proc.stdin is None:
+                return
+            try:
+                proc.stdin.write(code + "\n")
+                proc.stdin.flush()
+            except (BrokenPipeError, OSError):
+                pass
 
-        try:
-            proc.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
-        returncode = proc.returncode
-        tail = "\n".join(log[-20:]).lower()
+        proc: subprocess.Popen | None = None
+        log, tail, returncode, cancelled = _run_dd(
+            _login_cmd(username, password, remember, scratch),
+            LOGIN_TIMEOUT,
+            cancel_event,
+            stdin_writer=_guard_writer,
+        )
         if cancelled or (cancel_event is not None and cancel_event.is_set()):
             return False, "Sign-in cancelled"
+        tail_lower = "\n".join(log[-20:]).lower()
+        if returncode == 0 and "unable to get steam3 credentials" not in tail_lower:
+            return True, f"Signed in as {username}"
+        return False, tail_lower or f"DepotDownloader exited with code {returncode}"
     finally:
-        if proc is not None and proc.poll() is None:
-            proc.kill()
         shutil.rmtree(scratch, ignore_errors=True)
-
-    if returncode == 0 and "unable to get steam3 credentials" not in tail:
-        return True, f"Signed in as {username}"
-    return False, tail or f"DepotDownloader exited with code {returncode}"
 
 
 def verify_session(

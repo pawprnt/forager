@@ -10,11 +10,9 @@ import json
 import re
 import threading
 import urllib.parse
-import urllib.request
 
 from forager.core.game import Game
 from forager.artwork.cache import art_cache_dir
-from forager.utils.network import USER_AGENT
 
 STEAM_STORE_SEARCH = "https://store.steampowered.com/api/storesearch/?term={term}&l=english&cc=US"
 
@@ -84,11 +82,11 @@ def _name_matches(store_name: str, term: str) -> bool:
 
 
 def _steam_store_search(term: str) -> str | None:
+    from forager.utils.network import http_get
+
     url = STEAM_STORE_SEARCH.format(term=urllib.parse.quote(term))
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
+        payload = json.loads(http_get(url).decode("utf-8"))
     except Exception:
         return None
     for it in payload.get("items") or []:

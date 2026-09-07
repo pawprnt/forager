@@ -3,7 +3,7 @@ import json
 import os
 from pathlib import Path
 
-APP_NAME = "forager"
+from forager.core.constants import APP_NAME
 
 DEFAULTS = {
     "games_dir": str(Path.home() / "Games"),

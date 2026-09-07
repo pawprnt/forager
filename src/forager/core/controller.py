@@ -114,7 +114,8 @@ class ControllerPoller(QThread):
                     for event in dev.read():
                         self._handle_event(dev, event)
                 except OSError:
-                    return
+                    del fds[fd]
+                    break
 
     def _handle_event(self, dev, event):
         if event.type == ecodes.EV_KEY and event.code in _BUTTON_MAP:

@@ -23,7 +23,7 @@ def test_download_streams_progress(monkeypatch, tmp_path):
 
     progress: list[DownloadProgress] = []
 
-    def fake_run_dd(cmd, timeout=3600.0, cancel_event=None, on_line=None):
+    def fake_run_dd(cmd, timeout=3600.0, cancel_event=None, on_line=None, **kw):
         if on_line is not None:
             on_line("Update state (0x1) downloading, progress: 50.0 (500 / 1000)")
             on_line("Update state (0x2) complete, progress: 100.0 (1000 / 1000)")
@@ -46,7 +46,7 @@ def test_download_cancelled(monkeypatch, tmp_path):
         lambda: "/usr/bin/dotnet",
     )
 
-    def fake_run_dd(cmd, timeout=3600.0, cancel_event=None, on_line=None):
+    def fake_run_dd(cmd, timeout=3600.0, cancel_event=None, on_line=None, **kw):
         return (["x"], "interrupted", 1, True)
 
     monkeypatch.setattr("forager.providers.steam.depotdownloader._run_dd", fake_run_dd)

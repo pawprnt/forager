@@ -88,6 +88,10 @@ class MainWindow(QMainWindow):
         self._art_stop = threading.Event()
         self._hero_stop = threading.Event()
         self._playtime = PlaytimeTracker()
+        self._download_worker = None
+        self._download_cancel = threading.Event()
+        self._hero_signals = None
+        self._scan_generation = 0
 
         self._setup_ui()
         self._wire_controller()
@@ -280,20 +284,24 @@ class MainWindow(QMainWindow):
             return
         self._show_loading()
         self._scan_done = False
+        self._scan_generation += 1
+        gen = self._scan_generation
         self._worker = ScanWorker()
         self._worker.done.connect(self._on_games_scanned)
         self._worker.start()
-        QTimer.singleShot(600, self._check_done)
+        QTimer.singleShot(600, lambda: self._check_done(gen))
 
     def _on_games_scanned(self, games: list[Game]):
         self._games = games
         self._scan_done = True
 
-    def _check_done(self):
+    def _check_done(self, gen: int):
+        if gen != self._scan_generation:
+            return
         if self._scan_done:
             self._finish_loading()
         else:
-            QTimer.singleShot(100, self._check_done)
+            QTimer.singleShot(100, lambda: self._check_done(gen))
 
     def _finish_loading(self):
         self._hide_loading()
@@ -369,6 +377,12 @@ class MainWindow(QMainWindow):
         if game in self._hero_done:
             return
         self._hero_done.add(game)
+        old = self._hero_signals
+        if old is not None:
+            try:
+                old.ready.disconnect()
+            except RuntimeError:
+                pass
         self._hero_signals = HeroSignals(self)
         self._hero_signals.ready.connect(self._on_hero_ready)
         threading.Thread(
@@ -391,6 +405,9 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Launch Error", f"Failed to launch {game.name}:\n{e}")
             return
+        if proc is None:
+            QMessageBox.warning(self, "Launch Error", f"Could not find an executable for {game.name}.")
+            return
         self._playtime.begin(game, proc)
         self._recent.refresh()
         self._update_grid_panel()
@@ -408,6 +425,8 @@ class MainWindow(QMainWindow):
         if not game.app_id:
             QMessageBox.critical(self, "Install Error", "This game has no store ID to download.")
             return
+        if self._download_worker is not None and self._download_worker.isRunning():
+            self._download_cancel.set()
         from forager.core.config import settings
 
         dest = settings.games_dir / "steam" / "steamapps"

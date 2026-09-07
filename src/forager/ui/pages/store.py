@@ -35,7 +35,10 @@ _FONTS_DIR = Path(__file__).parent / "fonts"
 
 
 def _build_recolor_js() -> str:
-    css_text = _CSS_PATH.read_text()
+    try:
+        css_text = _CSS_PATH.read_text()
+    except OSError:
+        return ""
     filled = QUrl.fromLocalFile(
         str(_FONTS_DIR / "FluentSystemIcons-Filled.woff2")
     ).toString()
@@ -88,15 +91,17 @@ class WebStorePane(QWidget):
             note.setAlignment(Qt.AlignmentFlag.AlignCenter)
             style.label(note, C.TEXT_DIM, size=14)
             self._layout.addWidget(note)
-            self._view = None
-            return
-        self._view = QWebEngineView()
-        self._view.setStyleSheet("background-color: #111111;")
-        self._view.setVisible(False)
-        self._view.loadFinished.connect(self._on_load_finished)
-        self._layout.addWidget(self._view)
-        self._url = url
-        self._css_injected = False
+        self._view = None
+        return
+    self._view = QWebEngineView()
+    self._view.setStyleSheet("background-color: #111111;")
+    self._view.setVisible(False)
+    self._view.loadFinished.connect(self._on_load_finished)
+    self._layout.addWidget(self._view)
+    self._url = url
+    self._css_injected = False
+    self._css_retries = 0
+    self._CSS_MAX_RETRIES = 15
 
     def load(self):
         if self._view is not None:
@@ -124,6 +129,10 @@ class WebStorePane(QWidget):
 
     def _retry_css(self):
         if self._view is None or self._css_injected:
+            return
+        self._css_retries += 1
+        if self._css_retries > self._CSS_MAX_RETRIES:
+            self._view.setVisible(True)
             return
         self._view.page().runJavaScript(_STEAM_RECOLOR_JS)
         self._view.page().runJavaScript(_MUTATION_OBSERVER_JS)

@@ -24,6 +24,7 @@ _PLACEHOLDER_FONT_NAME = "VT323"
 _FONT_FILE = resources_dir() / "fonts" / "VT323-Regular.ttf"
 _PLACEHOLDER_FONT_FAMILY: str | None = None
 _PLACEHOLDER_SHADOW_CACHE: dict[int, QImage] = {}
+_SHADOW_CACHE_MAX = 64
 
 
 def register_placeholder_font() -> str:
@@ -76,9 +77,11 @@ def _black_shadow(pix: QPixmap, blur_scale: int = 8, dx: int = 3, dy: int = 3,
     mask = QImage(w, h, QImage.Format.Format_ARGB32)
     mask.fill(QColor(0, 0, 0, 255))
     mp = QPainter(mask)
-    mp.setCompositionMode(QPainter.CompositionMode.CompositionMode_DestinationIn)
-    mp.drawImage(0, 0, img)
-    mp.end()
+    try:
+        mp.setCompositionMode(QPainter.CompositionMode.CompositionMode_DestinationIn)
+        mp.drawImage(0, 0, img)
+    finally:
+        mp.end()
     small = mask.scaled(
         max(2, w // blur_scale), max(2, h // blur_scale),
         Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation,
@@ -90,9 +93,13 @@ def _black_shadow(pix: QPixmap, blur_scale: int = 8, dx: int = 3, dy: int = 3,
     out = QImage(w + 2 * m, h + 2 * m, QImage.Format.Format_ARGB32)
     out.fill(Qt.GlobalColor.transparent)
     op = QPainter(out)
-    op.setOpacity(alpha / 255.0)
-    op.drawImage(m + dx, m + dy, blurred)
-    op.end()
+    try:
+        op.setOpacity(alpha / 255.0)
+        op.drawImage(m + dx, m + dy, blurred)
+    finally:
+        op.end()
+    if len(_PLACEHOLDER_SHADOW_CACHE) >= _SHADOW_CACHE_MAX:
+        _PLACEHOLDER_SHADOW_CACHE.clear()
     _PLACEHOLDER_SHADOW_CACHE[key] = out
     return out
 
@@ -188,21 +195,23 @@ def _render_placeholder(game: Game, background, width: int, height: int,
     pix = QPixmap(width, height)
     pix.fill(Qt.GlobalColor.transparent)
     p = QPainter(pix)
-    p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-    background(p, width, height)
-    bar_h = max(40, int(height * 0.22))
-    content_h = height - bar_h
-    icon = _placeholder_icon(game)
-    if icon is not None:
-        side = int(min(width, content_h) * 0.42)
-        scaled = icon.scaled(side, side, Qt.AspectRatioMode.KeepAspectRatio,
-                             Qt.TransformationMode.SmoothTransformation)
-        x = (width - scaled.width()) // 2
-        y = int(content_h * 0.5 - scaled.height() / 2)
-        p.drawImage(x - 12, y - 12, _black_shadow(scaled))
-        p.drawPixmap(x, y, scaled)
-    else:
-        _draw_monogram(p, name or game.name, width, content_h)
-    _draw_title_bar(p, width, height, bar_h, (name or game.name).replace("/", " / "), pts)
-    p.end()
+    try:
+        p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        background(p, width, height)
+        bar_h = max(40, int(height * 0.22))
+        content_h = height - bar_h
+        icon = _placeholder_icon(game)
+        if icon is not None:
+            side = int(min(width, content_h) * 0.42)
+            scaled = icon.scaled(side, side, Qt.AspectRatioMode.KeepAspectRatio,
+                                 Qt.TransformationMode.SmoothTransformation)
+            x = (width - scaled.width()) // 2
+            y = int(content_h * 0.5 - scaled.height() / 2)
+            p.drawImage(x - 12, y - 12, _black_shadow(scaled))
+            p.drawPixmap(x, y, scaled)
+        else:
+            _draw_monogram(p, name or game.name, width, content_h)
+        _draw_title_bar(p, width, height, bar_h, (name or game.name).replace("/", " / "), pts)
+    finally:
+        p.end()
     return pix

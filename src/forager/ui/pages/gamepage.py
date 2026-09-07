@@ -1,5 +1,6 @@
 from __future__ import annotations
-from PySide6.QtCore import Qt, Signal
+import threading
+from PySide6.QtCore import Qt, QObject, Signal
 from PySide6.QtGui import QPixmap, QFont, QColor
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea,
@@ -23,6 +24,13 @@ _PLAY_QSS = style.button_qss("play")
 _RUNNING_QSS = style.button_qss("running")
 
 
+class _AchSignals(QObject):
+    done = Signal(list)
+
+class _HeroSignals(QObject):
+    ready = Signal(object)
+
+
 class GamePage(QWidget):
     play = Signal(object)
     stop = Signal(object)
@@ -34,6 +42,7 @@ class GamePage(QWidget):
         self.game: Game | None = None
         self._logo: QPixmap | None = None
         self._running = False
+        self._hero_stop = threading.Event()
 
         self.setStyleSheet(style.surface(1))
 
@@ -213,19 +222,32 @@ class GamePage(QWidget):
         if game.source != Source.STEAM or not game.app_id or not steamid:
             self._ach_frame.hide()
             return
-        achievements = player_achievements(steamid, game.app_id)
-        self._ach_list.clear()
-        if not achievements:
-            self._ach_frame.hide()
-            return
-        earned, total, _frac = achievement_summary(achievements)
-        self._ach_header.setText(f"ACHIEVEMENTS  ({earned}/{total})")
-        for ach in achievements:
-            mark = "✔" if ach["achieved"] else "○"
-            item = QListWidgetItem(f"{mark}  {ach['name']}")
-            item.setForeground(QColor(C.ACCENT_1 if ach["achieved"] else C.TEXT_DIM))
-            self._ach_list.addItem(item)
-        self._ach_frame.show()
+        def _fetch():
+            return player_achievements(steamid, game.app_id)
+        def _done(achievements):
+            if self.game != game:
+                return
+            self._ach_list.clear()
+            if not achievements:
+                self._ach_frame.hide()
+                return
+            earned, total, _frac = achievement_summary(achievements)
+            self._ach_header.setText(f"ACHIEVEMENTS  ({earned}/{total})")
+            for ach in achievements:
+                mark = "✔" if ach["achieved"] else "○"
+                item = QListWidgetItem(f"{mark}  {ach['name']}")
+                item.setForeground(QColor(C.ACCENT_1 if ach["achieved"] else C.TEXT_DIM))
+                self._ach_list.addItem(item)
+            self._ach_frame.show()
+        signals = _AchSignals(self)
+        signals.done.connect(_done)
+        def _run():
+            try:
+                result = _fetch()
+            except Exception:
+                result = []
+            signals.done.emit(result)
+        threading.Thread(target=_run, daemon=True).start()
 
     def set_game(self, game: Game):
         self.game = game
@@ -255,7 +277,6 @@ class GamePage(QWidget):
         self._path_label.setText(game.display_path)
         self._info_rows["source"].setText(game.source_name)
         self._info_rows["app_id"].setText(game.app_id or "—")
-        self._populate_achievements(game)
 
         installed = game.installed and game.path is not None
         if installed:
@@ -266,6 +287,10 @@ class GamePage(QWidget):
             self._play_btn.setStyleSheet(_PLAY_QSS)
             self._play_icon_label.setPixmap(load_bundled_icon("box", "#ffffff").pixmap(20, 20))
             self._play_text.setText("Install")
+
+        self._hero_stop.set()
+        self._hero_stop = threading.Event()
+        self._populate_achievements(game)
 
     def set_running(self, running: bool) -> None:
         if self.game is None:

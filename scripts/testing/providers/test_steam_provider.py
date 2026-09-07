@@ -144,8 +144,6 @@ def test_steamid_from_cookie():
 
 
 def test_account_name_from_steamid(monkeypatch):
-    import urllib.request
-
     xml = (
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
         "<profile>\n"
@@ -155,38 +153,26 @@ def test_account_name_from_steamid(monkeypatch):
         "</profile>\n"
     )
 
-    class FakeResp:
-        def read(self, _n):
-            return xml.encode("utf-8")
+    def fake_http_get(url, **kw):
+        assert "/profiles/76561198123456789/" in url
+        return xml.encode("utf-8")
 
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *a):
-            return False
-
-    def fake_urlopen(req, timeout=0):
-        assert b"/profiles/76561198123456789/" in req.full_url.encode()
-        return FakeResp()
-
-    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr("forager.utils.network.http_get", fake_http_get)
     assert steam.account_name_from_steamid("76561198123456789") == "alice & friends"
 
 
 def test_account_name_from_steamid_handles_errors(monkeypatch):
-    import urllib.request
-
-    def boom(req, timeout=0):
+    def boom(url, **kw):
         raise OSError("network down")
 
-    monkeypatch.setattr(urllib.request, "urlopen", boom)
+    monkeypatch.setattr("forager.utils.network.http_get", boom)
     assert steam.account_name_from_steamid("76561198123456789") is None
 
 
 def test_verify_session_reuses_token(monkeypatch):
     calls = {}
 
-    def fake_run_dd(cmd, timeout, cancel_event=None, on_line=None):
+    def fake_run_dd(cmd, timeout, cancel_event=None, on_line=None, **kw):
         calls["cmd"] = cmd
         return ["Connecting to Steam3...", " Done!", "Got 3 licenses for account!"], "", 0, False
 

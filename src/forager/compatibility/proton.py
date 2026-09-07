@@ -3,11 +3,8 @@ import os
 import re
 import shutil
 import subprocess
-import tarfile
-import tempfile
 import time
 import urllib.request
-import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -104,11 +101,15 @@ def ensure_rtp(prefix: Path) -> None:
     if marker.exists():
         return
     prefix.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        [str(proton_bin()), "run", "reg", "add", _RTP_KEY, "/v", "RPGVXAce", "/d", r"C:\rtp", "/f"],
-        env=_proton_env(prefix),
-        check=True,
-    )
+    try:
+        subprocess.run(
+            [str(proton_bin()), "run", "reg", "add", _RTP_KEY, "/v", "RPGVXAce", "/d", r"C:\rtp", "/f"],
+            env=_proton_env(prefix),
+            check=True,
+            timeout=30,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError) as e:
+        raise RuntimeError(f"Failed to install RPG Maker VX Ace RTP: {e}") from e
     drive_c = prefix / "pfx" / "drive_c"
     drive_c.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source, drive_c / "rtp", dirs_exist_ok=True)
@@ -167,7 +168,7 @@ def _flatten_depotdownloader() -> None:
         dest = DEPOTDL_DIR / item.name
         if dest.exists():
             if dest.is_dir():
-                shutil.rmtree(dest, ignore_errors=True)
+                shutil.rmtree(dest)
             else:
                 dest.unlink()
         item.rename(dest)
@@ -182,12 +183,9 @@ def ensure_depotdownloader() -> None:
         if not (DEPOTDL_DIR / "version.txt").is_file():
             (DEPOTDL_DIR / "version.txt").write_text(DEPOTDL_TAG, "utf-8")
         return
-    DEPOTDL_DIR.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(DEPOTDL_URL, timeout=120) as resp, tempfile.NamedTemporaryFile(suffix=".zip", dir=runtime_dir()) as tmp:
-        shutil.copyfileobj(resp, tmp)
-        tmp.flush()
-        with zipfile.ZipFile(tmp.name) as zf:
-            zf.extractall(DEPOTDL_DIR)
+    from forager.utils.download import download_and_extract_zip
+
+    download_and_extract_zip(DEPOTDL_URL, DEPOTDL_DIR)
     _flatten_depotdownloader()
     depotdownloader_bin().chmod(0o755)
     (DEPOTDL_DIR / "version.txt").write_text(DEPOTDL_TAG, "utf-8")
@@ -202,12 +200,9 @@ def ensure_steamcmd() -> None:
     symlinks intact, which DepotDownloader cannot do)."""
     if steamcmd_sh().is_file():
         return
-    STEAMCMD_DIR.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(STEAMCMD_URL, timeout=120) as resp, tempfile.NamedTemporaryFile(suffix=".tar.gz", dir=runtime_dir()) as tmp:
-        shutil.copyfileobj(resp, tmp)
-        tmp.flush()
-        with tarfile.open(tmp.name) as tf:
-            tf.extractall(STEAMCMD_DIR)
+    from forager.utils.download import download_and_extract_tar
+
+    download_and_extract_tar(STEAMCMD_URL, STEAMCMD_DIR)
     steamcmd_sh().chmod(0o755)
     (STEAMCMD_DIR / "linux32" / "steamcmd").chmod(0o755)
 
@@ -303,7 +298,8 @@ def update_proton(report=None, on_progress=None, cancel_event=None) -> str | Non
         text=True,
         bufsize=1,
     )
-    assert proc.stdout is not None
+    if proc.stdout is None:
+        raise RuntimeError("steamcmd stdout pipe failed to open")
     last_done: int | None = None
     last_t: float | None = None
     speed = 0
@@ -382,7 +378,14 @@ def update_proton(report=None, on_progress=None, cancel_event=None) -> str | Non
         shutil.rmtree(BACKUP_DIR)
     if proton_dir().exists():
         proton_dir().rename(BACKUP_DIR)
-    STAGING_DIR.rename(proton_dir())
+    try:
+        STAGING_DIR.rename(proton_dir())
+    except OSError:
+        if BACKUP_DIR.exists():
+            if proton_dir().exists():
+                shutil.rmtree(proton_dir())
+            BACKUP_DIR.rename(proton_dir())
+        raise
     if BACKUP_DIR.exists():
         shutil.rmtree(BACKUP_DIR)
 

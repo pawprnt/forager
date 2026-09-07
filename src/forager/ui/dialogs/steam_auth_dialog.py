@@ -49,6 +49,7 @@ class SteamAuthWorker(QThread):
         self._password = password
         self._codes: queue.Queue = queue.Queue()
         self._cancel = threading.Event()
+        self._done_emitted = False
 
     # -- public API (GUI thread) ---------------------------------------
 
@@ -65,16 +66,22 @@ class SteamAuthWorker(QThread):
         try:
             self._run_flow()
         except SteamAuthError as e:
-            self.done.emit(False, str(e))
+            self._emit_done(False, str(e))
         except Exception as e:
-            self.done.emit(False, f"Unexpected error: {e}")
+            self._emit_done(False, f"Unexpected error: {e}")
+
+    def _emit_done(self, ok: bool, message: str):
+        if self._done_emitted:
+            return
+        self._done_emitted = True
+        self.done.emit(ok, message)
 
     def _run_flow(self):
         if self._method == "qr":
             session = auth.start_qr_session()
         else:
             if not self._username or not self._password:
-                self.done.emit(False, "Enter your Steam account name and password.")
+                self._emit_done(False, "Enter your Steam account name and password.")
                 return
             session = auth.start_credentials_session(self._username, self._password)
 
@@ -103,7 +110,7 @@ class SteamAuthWorker(QThread):
             steamid=steamid,
             login_secure=login_secure,
         )
-        self.done.emit(True, account_name)
+        self._emit_done(True, account_name)
 
     def _handle_confirmations(self, session):
         if session.code_types:

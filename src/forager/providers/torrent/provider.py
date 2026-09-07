@@ -87,7 +87,9 @@ class TorrentProvider(Provider):
         # Resolve the handle if it was added asynchronously.
         if handle is None:
             alert = ses.wait_for_alert(60000)
-            while alert is not None:
+            attempts = 0
+            while alert is not None and attempts < 20:
+                attempts += 1
                 if "failed" in type(alert).__name__.lower():
                     raise BackendNotConfigured(
                         f"Failed to add torrent: {getattr(alert, 'message', 'unknown error')}"
@@ -123,6 +125,7 @@ class TorrentProvider(Provider):
                 )
 
             if status.is_seeding or status.progress >= 1.0:
+                ses.remove_torrent(handle)
                 break
 
             ses.wait_for_alert(1000)

@@ -6,6 +6,7 @@ heroes), ``banners/`` (game-page hero banners) and ``icons/`` (tile icons).
 Every directory is created on demand.
 """
 from __future__ import annotations
+import hashlib
 from pathlib import Path
 
 from forager.core.config import default_cache_dir
@@ -26,3 +27,15 @@ def icon_cache_dir() -> Path:
 
 def banner_cache_dir() -> Path:
     return ensure_dir(cache_dir() / "banners")
+
+
+def cache_key(name: str) -> str:
+    return hashlib.sha256(name.encode()).hexdigest()[:16]
+
+
+def cached_path(dir_: Path, prefix: str, key: str) -> Path | None:
+    for ext in (".jpg", ".png"):
+        p = dir_ / f"{prefix}_{key}{ext}"
+        if p.is_file():
+            return p
+    return None

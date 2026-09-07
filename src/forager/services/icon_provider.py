@@ -1,5 +1,4 @@
 from __future__ import annotations
-import hashlib
 from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QImage
@@ -7,31 +6,21 @@ from forager.core.game import Game, Source
 from forager.services.steamgriddb import (
     fetch_icon_bytes_for_steam, fetch_icon_bytes_for_game,
 )
-from forager.artwork.cache import icon_cache_dir
+from forager.artwork.cache import icon_cache_dir, cache_key
 from forager.core.paths import steam_appcache_dir
 
 STEAM_CACHE = steam_appcache_dir()
 ICON_CACHE = icon_cache_dir()
 
 
-def _ensure_cache():
-    ICON_CACHE.mkdir(parents=True, exist_ok=True)
-
-
-def _cache_key(name: str) -> str:
-    return hashlib.sha256(name.encode()).hexdigest()[:16]
-
-
 def _cached_icon_path(game: Game) -> Path | None:
-    _ensure_cache()
-    key = _cache_key(game.app_id or game.name)
+    key = cache_key(game.app_id or game.name)
     path = ICON_CACHE / f"{key}.png"
     return path if path.is_file() else None
 
 
 def _save_icon_bytes(game: Game, data: bytes):
-    _ensure_cache()
-    key = _cache_key(game.app_id or game.name)
+    key = cache_key(game.app_id or game.name)
     (ICON_CACHE / f"{key}.png").write_bytes(data)
 
 
@@ -56,7 +45,9 @@ def load_icon_bytes(game: Game, allow_network: bool = True) -> bytes | None:
 def load_icon(game: Game, allow_network: bool = True) -> QPixmap | None:
     cached = _cached_icon_path(game)
     if cached is not None:
-        return QPixmap(str(cached))
+        pix = QPixmap(str(cached))
+        if not pix.isNull():
+            return pix
 
     pix = None
     if game.app_id:

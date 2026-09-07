@@ -31,15 +31,15 @@ class Game:
     installed: bool = True
 
     def __hash__(self):
-        return hash((self.source, self.app_id or str(self.path)))
+        ident = self.app_id or (str(self.path) if self.path is not None else self.name)
+        return hash((self.source, ident))
 
     def __eq__(self, other):
         if not isinstance(other, Game):
             return NotImplemented
-        return (self.source, self.app_id or str(self.path)) == (
-            other.source,
-            other.app_id or str(other.path),
-        )
+        self_ident = self.app_id or (str(self.path) if self.path is not None else self.name)
+        other_ident = other.app_id or (str(other.path) if other.path is not None else other.name)
+        return (self.source, self_ident) == (other.source, other_ident)
 
     @property
     def source_name(self) -> str:
@@ -75,7 +75,7 @@ class Game:
         """
         if self.search_names:
             return (list(self.search_names), "")
-        if self.path is None:
+        if not self.path:
             return None
         if self.source == Source.STEAM:
             return None

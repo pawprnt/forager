@@ -1,17 +1,12 @@
 from __future__ import annotations
 import os
 import json
-import io
-import urllib.request
-import urllib.error
 import urllib.parse
 from pathlib import Path
-from PIL import Image
-from PySide6.QtCore import QByteArray, Qt
-from PySide6.QtGui import QPixmap, QImage
 
 from forager.core.constants import KEYRING_SERVICE
 from forager.utils.network import USER_AGENT
+from forager.artwork.pixmap_utils import bytes_to_pixmap
 
 try:
     import keyring as _keyring
@@ -56,25 +51,22 @@ def _api_headers() -> dict[str, str]:
     return headers
 
 
-def _cdn_headers() -> dict[str, str]:
-    return {"User-Agent": USER_AGENT}
-
-
 def _api_get(path: str) -> dict | None:
-    req = urllib.request.Request(f"{BASE}{path}", headers=_api_headers())
+    from forager.utils.network import http_get
+
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return json.loads(resp.read().decode())
-    except (urllib.error.HTTPError, urllib.error.URLError, json.JSONDecodeError, OSError):
+        raw = http_get(f"{BASE}{path}", timeout=10, headers=_api_headers())
+        return json.loads(raw.decode())
+    except Exception:
         return None
 
 
 def _download(url: str) -> bytes | None:
-    req = urllib.request.Request(url, headers=_cdn_headers())
+    from forager.utils.network import http_get
+
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return resp.read()
-    except (urllib.error.HTTPError, urllib.error.URLError, OSError):
+        return http_get(url)
+    except Exception:
         return None
 
 
@@ -105,36 +97,19 @@ def _asset_banner_bytes(sgdb_id: int) -> bytes | None:
     return None
 
 
-def _to_qpixmap(data: bytes) -> QPixmap | None:
-    buf = QByteArray(data)
-    pix = QPixmap()
-    if pix.loadFromData(buf):
-        return pix.scaled(
-            ICON_SIZE, ICON_SIZE,
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation,
-        )
-    try:
-        img = Image.open(io.BytesIO(data))
-        img = img.convert("RGBA")
-        img.thumbnail((ICON_SIZE, ICON_SIZE), Image.LANCZOS)
-        raw = img.tobytes("raw", "RGBA")
-        qimg = QImage(raw, img.width, img.height, QImage.Format_RGBA8888)
-        return QPixmap.fromImage(qimg)
-    except Exception:
-        return None
-
-
-def fetch_header_for_steam(app_id: str) -> QPixmap | None:
+def fetch_header_for_steam(app_id: str):
     data = fetch_header_bytes_for_steam(app_id)
-    return _to_qpixmap(data) if data else None
+    return bytes_to_pixmap(data, max_size=ICON_SIZE) if data else None
 
 
 def fetch_banner_bytes_for_steam(app_id: str) -> bytes | None:
     game_data = _api_get(f"/games/steam/{app_id}")
     if not game_data or not game_data.get("success"):
         return None
-    sgdb_id = game_data["data"]["id"]
+    game_inner = game_data.get("data")
+    sgdb_id = game_inner.get("id") if isinstance(game_inner, dict) else None
+    if not sgdb_id:
+        return None
     return _asset_banner_bytes(sgdb_id)
 
 
@@ -142,7 +117,10 @@ def fetch_header_bytes_for_steam(app_id: str) -> bytes | None:
     game_data = _api_get(f"/games/steam/{app_id}")
     if not game_data or not game_data.get("success"):
         return None
-    sgdb_id = game_data["data"]["id"]
+    game_inner = game_data.get("data")
+    sgdb_id = game_inner.get("id") if isinstance(game_inner, dict) else None
+    if not sgdb_id:
+        return None
     return _asset_bytes("headers", sgdb_id)
 
 
@@ -206,16 +184,19 @@ def fetch_icon_bytes_for_game(game) -> bytes | None:
     return _asset_for_game_bytes("icons", game)
 
 
-def fetch_icon_for_steam(app_id: str) -> QPixmap | None:
+def fetch_icon_for_steam(app_id: str):
     data = fetch_icon_bytes_for_steam(app_id)
-    return _to_qpixmap(data) if data else None
+    return bytes_to_pixmap(data, max_size=ICON_SIZE) if data else None
 
 
 def fetch_icon_bytes_for_steam(app_id: str) -> bytes | None:
     game_data = _api_get(f"/games/steam/{app_id}")
     if not game_data or not game_data.get("success"):
         return None
-    sgdb_id = game_data["data"]["id"]
+    game_inner = game_data.get("data")
+    sgdb_id = game_inner.get("id") if isinstance(game_inner, dict) else None
+    if not sgdb_id:
+        return None
     return _asset_bytes("icons", sgdb_id)
 
 

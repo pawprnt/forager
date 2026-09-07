@@ -48,7 +48,7 @@ def test_list_owned_empty_when_no_token(no_token):
 
 def test_list_owned_parses(with_token, monkeypatch):
     body = json.dumps(_SAMPLE_PRODUCTS).encode("utf-8")
-    monkeypatch.setattr(gog_provider, "http_get", lambda url: body)
+    monkeypatch.setattr("forager.providers.gog.provider.http_get", lambda url, **kw: body)
     games = GogProvider().list_owned()
     assert len(games) == 2
     assert games[0].app_id == "1207658922"

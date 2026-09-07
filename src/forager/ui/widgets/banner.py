@@ -1,6 +1,6 @@
 """Steam-style hero banner for the game page."""
 from __future__ import annotations
-from PySide6.QtCore import Qt, QRect, QRectF
+from PySide6.QtCore import Qt, QRectF
 from PySide6.QtGui import QPixmap, QColor, QImage, QPainter, QPainterPath
 from PySide6.QtWidgets import QWidget
 

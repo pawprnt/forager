@@ -10,6 +10,7 @@ is not accumulated — only the last-played stamp). State persists to
 from __future__ import annotations
 import json
 import subprocess
+import threading
 import time
 from pathlib import Path
 
@@ -44,6 +45,7 @@ class PlaytimeStore:
     def __init__(self, path: Path | None = None):
         self.path = Path(path) if path is not None else playtime_file()
         self._data: dict[str, dict] = {}
+        self._lock = threading.Lock()
         self.load()
 
     def load(self) -> None:
@@ -55,17 +57,21 @@ class PlaytimeStore:
                     data = raw
         except (OSError, json.JSONDecodeError):
             data = {}
-        self._data = data
+        with self._lock:
+            self._data = data
 
     def save(self) -> None:
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.path.write_text(json.dumps(self._data, indent=2) + "\n", "utf-8")
+            with self._lock:
+                snapshot = dict(self._data)
+            self.path.write_text(json.dumps(snapshot, indent=2) + "\n", "utf-8")
         except OSError:
             pass
 
     def get(self, key: str) -> dict:
-        entry = self._data.get(key)
+        with self._lock:
+            entry = self._data.get(key)
         if entry is None or not isinstance(entry, dict):
             entry = {}
         return entry
@@ -78,18 +84,20 @@ class PlaytimeStore:
 
     def touch(self, key: str, when: float | None = None) -> None:
         """Stamp a launch without changing accumulated playtime."""
-        entry = dict(self.get(key))
-        entry["last_played"] = time.time() if when is None else when
-        entry["playtime"] = float(entry.get("playtime", 0) or 0)
-        self._data[key] = entry
+        with self._lock:
+            entry = dict(self._data.get(key) or {})
+            entry["last_played"] = time.time() if when is None else when
+            entry["playtime"] = float(entry.get("playtime", 0) or 0)
+            self._data[key] = entry
 
     def add(self, key: str, seconds: float) -> None:
         if seconds <= 0:
             return
-        entry = dict(self.get(key))
-        entry["playtime"] = float(entry.get("playtime", 0) or 0) + seconds
-        entry["last_played"] = float(entry.get("last_played", 0) or 0)
-        self._data[key] = entry
+        with self._lock:
+            entry = dict(self._data.get(key) or {})
+            entry["playtime"] = float(entry.get("playtime", 0) or 0) + seconds
+            entry["last_played"] = float(entry.get("last_played", 0) or 0)
+            self._data[key] = entry
 
 
 class PlaytimeTracker:
@@ -168,9 +176,13 @@ class PlaytimeTracker:
         if proc is not None and proc.poll() is None:
             proc.terminate()
             try:
-                proc.wait(timeout=5)
+                proc.wait(timeout=2)
             except subprocess.TimeoutExpired:
                 proc.kill()
+                try:
+                    proc.wait(timeout=1)
+                except subprocess.TimeoutExpired:
+                    pass
             self._store.add(key, max(0.0, time.time() - sess["last"]))
         del self._sessions[key]
         self._store.save()

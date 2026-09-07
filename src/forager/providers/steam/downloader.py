@@ -28,7 +28,7 @@ def _download_cmd(app_id: str, destination: Path, username: str, password: str |
         "-remember-password",
     ]
     if password:
-        cmd += ["-password", password]
+        cmd += ["-stdin"]
     return cmd
 
 
@@ -38,11 +38,12 @@ def download_app(app_id, destination, on_progress=None, cancel=None) -> None:
     username = credentials.get_username()
     if not username:
         raise BackendNotConfigured("Sign in to Steam to download games.")
+    password = credentials.get_password()
 
     dest = Path(destination)
     dest.mkdir(parents=True, exist_ok=True)
 
-    cmd = _download_cmd(app_id, dest, username, credentials.get_password())
+    cmd = _download_cmd(app_id, dest, username, password)
 
     import time
 
@@ -66,8 +67,20 @@ def download_app(app_id, destination, on_progress=None, cancel=None) -> None:
             _last["t"] = now
             on_progress(DownloadProgress(stage, percent, done, total, speed))
 
+    stdin_writer = None
+    if password:
+        _pw_sent = {"sent": False}
+        def _check_pw_prompt(line: str) -> None:
+            if _pw_sent["sent"]:
+                return
+            if "enter account password" in line.lower():
+                _pw_sent["sent"] = True
+        stdin_writer = _check_pw_prompt
+
     log, tail, code, cancelled = depotdownloader._run_dd(
-        cmd, timeout=3600.0, cancel_event=cancel, on_line=on_line
+        cmd, timeout=3600.0, cancel_event=cancel, on_line=on_line,
+        stdin_writer=stdin_writer,
+        stdin_payload=password if password else None,
     )
     if cancelled:
         raise DownloadCancelled()

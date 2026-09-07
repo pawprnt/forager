@@ -9,9 +9,6 @@ copy on disk is always current after any use.
 from __future__ import annotations
 import json
 import shutil
-import tempfile
-import urllib.request
-import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -47,11 +44,11 @@ def installed_depotdl_tag() -> str | None:
 
 
 def _latest_depotdl_tag() -> str | None:
-    req = urllib.request.Request(GITHUB_LATEST_URL, headers={"User-Agent": "forager"})
+    from forager.utils.network import http_get
+
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.load(resp)
-    except (OSError, ValueError):
+        data = json.loads(http_get(GITHUB_LATEST_URL, timeout=10))
+    except Exception:
         return None
     tag = data.get("tag_name")
     return tag if isinstance(tag, str) and tag else None
@@ -80,17 +77,27 @@ def update_tool_updates(report=None) -> list[str]:
 
 
 def _download_depotdl(tag: str) -> None:
+    from forager.utils.download import download_and_extract_zip
+
     DEPOTDL_DIR.mkdir(parents=True, exist_ok=True)
+    saved_session = None
+    account_cfg = DEPOTDL_DIR / "account.config"
+    if account_cfg.is_file():
+        try:
+            saved_session = account_cfg.read_bytes()
+        except OSError:
+            pass
     for old in DEPOTDL_DIR.iterdir():
         if old.is_dir():
             shutil.rmtree(old, ignore_errors=True)
         else:
             old.unlink()
-    with urllib.request.urlopen(depotdl_url(tag), timeout=120) as resp, tempfile.NamedTemporaryFile(suffix=".zip", dir=runtime_dir()) as tmp:
-        shutil.copyfileobj(resp, tmp)
-        tmp.flush()
-        with zipfile.ZipFile(tmp.name) as zf:
-            zf.extractall(DEPOTDL_DIR)
+    download_and_extract_zip(depotdl_url(tag), DEPOTDL_DIR)
     _flatten_depotdownloader()
     depotdownloader_bin().chmod(0o755)
     (DEPOTDL_DIR / "version.txt").write_text(tag, "utf-8")
+    if saved_session is not None:
+        try:
+            account_cfg.write_bytes(saved_session)
+        except OSError:
+            pass

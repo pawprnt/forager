@@ -5,8 +5,7 @@ disk art cache, the Steam CDN for the resolved ``app_id``, SteamGridDB by app
 id, SteamGridDB by search, then the generated placeholders.
 """
 from __future__ import annotations
-import hashlib
-import urllib.request
+import threading
 from pathlib import Path
 from PySide6.QtGui import QPixmap
 
@@ -26,21 +25,20 @@ from forager.artwork.placeholder import (
     register_placeholder_font,
 )
 from forager.providers.steam.appid import steam_app_id
-from forager.artwork.cache import art_cache_dir, banner_cache_dir
+from forager.artwork.cache import (
+    art_cache_dir, banner_cache_dir, cache_key, cached_path,
+)
 from forager.core.paths import steam_appcache_dir
 
 STEAM_CACHE = steam_appcache_dir()
 ART_CACHE = art_cache_dir()
 BANNER_CACHE = banner_cache_dir()
 STEAM_CDN = "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{app_id}/{name}"
+_CACHE_LOCK = threading.Lock()
 
 
 def _ensure_cache():
     ART_CACHE.mkdir(parents=True, exist_ok=True)
-
-
-def _cache_key(name: str) -> str:
-    return hashlib.sha256(name.encode()).hexdigest()[:16]
 
 
 def _steam_path(game: Game, filename: str) -> Path | None:
@@ -53,12 +51,12 @@ def _steam_path(game: Game, filename: str) -> Path | None:
 # -- Steam CDN ----------------------------------------------------------
 
 def _steam_cdn_bytes(app_id: str, names: tuple[str, ...]) -> bytes | None:
+    from forager.utils.network import http_get
+
     for name in names:
         url = STEAM_CDN.format(app_id=app_id, name=name)
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "forager/1.0"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                return resp.read()
+            return http_get(url)
         except Exception:
             continue
     return None
@@ -74,27 +72,16 @@ def _image_ext(data: bytes) -> str:
     return ".jpg" if data[:3] == b"\xff\xd8" else ".png"
 
 
-def _cached_path(dir_: Path, prefix: str, key: str) -> Path | None:
-    for ext in (".jpg", ".png"):
-        p = dir_ / f"{prefix}_{key}{ext}"
-        if p.is_file():
-            return p
-    return None
-
-
 def _cached_header_path(game: Game) -> Path | None:
-    _ensure_cache()
-    return _cached_path(ART_CACHE, "header", _cache_key(game.app_id or game.name))
+    return cached_path(ART_CACHE, "header", cache_key(game.app_id or game.name))
 
 
 def _cached_grid_path(game: Game) -> Path | None:
-    _ensure_cache()
-    return _cached_path(ART_CACHE, "grid", _cache_key(game.app_id or game.name))
+    return cached_path(ART_CACHE, "grid", cache_key(game.app_id or game.name))
 
 
 def _cached_hero_path(game: Game) -> Path | None:
-    BANNER_CACHE.mkdir(parents=True, exist_ok=True)
-    return _cached_path(BANNER_CACHE, "hero", _cache_key(game.app_id or game.name))
+    return cached_path(BANNER_CACHE, "hero", cache_key(game.app_id or game.name))
 
 
 # -- header -------------------------------------------------------------
@@ -121,8 +108,9 @@ def load_header_bytes(game: Game, allow_network: bool = True) -> bytes | None:
         data = fetch_header_bytes_for_game(game)
     if data:
         _ensure_cache()
-        key = _cache_key(game.app_id or game.name)
-        (ART_CACHE / f"header_{key}.png").write_bytes(data)
+        key = cache_key(game.app_id or game.name)
+        with _CACHE_LOCK:
+            (ART_CACHE / f"header_{key}.png").write_bytes(data)
     return data
 
 
@@ -157,8 +145,9 @@ def load_grid_bytes(game: Game, allow_network: bool = True) -> bytes | None:
         data = fetch_grid_bytes_for_game(game)
     if data:
         _ensure_cache()
-        key = _cache_key(game.app_id or game.name)
-        (ART_CACHE / f"grid_{key}{_image_ext(data)}").write_bytes(data)
+        key = cache_key(game.app_id or game.name)
+        with _CACHE_LOCK:
+            (ART_CACHE / f"grid_{key}{_image_ext(data)}").write_bytes(data)
     return data
 
 
@@ -192,8 +181,9 @@ def load_hero_bytes(game: Game, allow_network: bool = True) -> bytes | None:
         data = fetch_banner_bytes_for_game(game)
     if data:
         BANNER_CACHE.mkdir(parents=True, exist_ok=True)
-        key = _cache_key(game.app_id or game.name)
-        (BANNER_CACHE / f"hero_{key}{_image_ext(data)}").write_bytes(data)
+        key = cache_key(game.app_id or game.name)
+        with _CACHE_LOCK:
+            (BANNER_CACHE / f"hero_{key}{_image_ext(data)}").write_bytes(data)
         return data
     return load_header_bytes(game, allow_network)
 

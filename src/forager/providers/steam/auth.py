@@ -44,7 +44,7 @@ POLL_URL = API_BASE + "/IAuthenticationService/PollAuthSessionStatus/v1/"
 GUARD_CODE_URL = API_BASE + "/IAuthenticationService/UpdateAuthSessionWithSteamGuardCode/v1/"
 RSA_KEY_URL = API_BASE + "/IAuthenticationService/GetPasswordRSAPublicKey/v1/"
 
-USER_AGENT = "forager"
+from forager.utils.network import USER_AGENT
 
 _PLATFORM_WEB = 2
 _OS_TYPE = 20
