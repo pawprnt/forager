@@ -17,7 +17,7 @@ buildPythonPackage {
   src = fetchFromGitHub {
     owner = "pawprnt";
     repo = "forager";
-    rev = "v0.5.1";
+    rev = "v0.5.2";
     # placeholder — first build will fail with "hash mismatch", nix will print
     # the actual hash. replace this line with the real hash and rebuild.
     hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
