@@ -37,8 +37,20 @@ buildPythonPackage {
     mkdir -p $out/share/applications
     mkdir -p $out/share/icons/hicolor/scalable/apps
 
-    cp ${./../packaging/forager.desktop} $out/share/applications/forager.desktop
-    cp ${./../packaging/flatpak/io.github.pawprnt.forager.svg} $out/share/icons/hicolor/scalable/apps/forager.svg
+    cat > $out/share/applications/forager.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=forager
+GenericName=Game Launcher
+Comment=Steam-like game launcher for your local game library
+Exec=forager
+Icon=forager
+Terminal=false
+Categories=Game;Qt;
+StartupNotify=true
+EOF
+
+    cp $src/readme/forager.svg $out/share/icons/hicolor/scalable/apps/forager.svg
   '';
 
   pythonImportsCheck = [ "forager" ];

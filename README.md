@@ -1,38 +1,68 @@
-# forager
+<p align="center">
+  <img src="readme/forager.svg" width="128" alt="forager icon" />
+</p>
 
-a chill game launcher for your local library.
-steam-like vibes, space theme aesthetics, no subscription fees.
+<h1 align="center">forager</h1>
+
+<p align="center">
+  a chill game launcher for your local library.<br/>
+  steam-like vibes, space theme aesthetics, no subscription fees.
+</p>
+
+<p align="center">
+  <a href="#install"><img src="https://img.shields.io/badge/install-green" alt="install" /></a>
+  <a href="#features"><img src="https://img.shields.io/badge/features-blue" alt="features" /></a>
+  <a href="#roadmap"><img src="https://img.shields.io/badge/roadmap-purple" alt="roadmap" /></a>
+  <a href="https://github.com/pawprnt/forager/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-orange" alt="license" /></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20(proton)-lightgrey" alt="platform" />
+  <img src="https://img.shields.io/badge/python-3.10+-3776ab" alt="python" />
+  <img src="https://img.shields.io/badge/Qt-6-41cd52" alt="qt" />
+  <a href="https://github.com/pawprnt/forager/actions"><img src="https://img.shields.io/github/actions/workflow/status/pawprnt/forager/nix.yml?branch=main&label=nix%20build" alt="nix build" /></a>
+</p>
+
+---
+
+## table of contents
+
+- [screenshots](#screenshots)
+- [features](#features)
+- [install](#install)
+  - [nixos](#nixos)
+  - [aur (arch linux)](#from-the-aur-arch-linux)
+  - [flatpak](#from-flatpak)
+  - [manual](#manual)
+- [configuration](#configuration)
+- [library layout](#library-layout)
+- [roadmap](#roadmap)
+- [license](#license)
+
+---
+
+## screenshots
+
+> screenshots and videos coming soon.
 
 ## features
 
-- **library view** — steam-style grid of cover tiles with a searchable sidebar
-- **space theme ui** — dark, layered, rounded look inspired by [SpaceTheme](https://github.com/SpaceTheme/Steam)
-- **gamepad support** — navigate and launch with a controller (via `evdev`)
-- **cover art** — pulls art from local steam files, the steam CDN, and steamgriddb
-- **steam account** — sign in with the steam mobile app (QR code) or username/password
-- **full steam library** — shows all owned games, not just installed ones
-- **steam downloads** — download and install steam games directly
-- **store** — browse and buy games from the steam store in-app
-- **epic games** — epic games support via legendary
-- **gog** — gog support for offline installers
-- **torrents** — torrent downloads via libtorrent
-- **steam achievements** — view your achievements on the game page
-- **proton** — runs windows `.exe` games through a shared proton prefix
-- **tool updates** — keeps bundled tools up to date with live progress
-
-## roadmap
-
-all roadmap items are implemented. remaining work before `v1.0.0` is polish, testing, and packaging.
-
-| feature | status |
-|---------|--------|
-| full steam library | done |
-| steam downloads | done |
-| store webview | done |
-| epic games | done |
-| gog | done |
-| steam achievements | done |
-| torrenting | done |
+| feature | description |
+|---------|-------------|
+| **library view** | steam-style grid of cover tiles with a searchable sidebar |
+| **space theme ui** | dark, layered, rounded look inspired by [SpaceTheme](https://github.com/SpaceTheme/Steam) |
+| **gamepad support** | navigate and launch with a controller (via `evdev`) |
+| **cover art** | pulls art from local steam files, the steam CDN, and steamgriddb |
+| **steam account** | sign in with the steam mobile app (QR code) or username/password |
+| **full steam library** | shows all owned games, not just installed ones |
+| **steam downloads** | download and install steam games directly |
+| **store** | browse and buy games from the steam store in-app |
+| **epic games** | epic games support via legendary |
+| **gog** | gog support for offline installers |
+| **torrents** | torrent downloads via libtorrent |
+| **steam achievements** | view your achievements on the game page |
+| **proton** | runs windows `.exe` games through a shared proton prefix |
+| **tool updates** | keeps bundled tools up to date with live progress |
 
 ## install
 
@@ -99,9 +129,11 @@ cover art caches live in `~/.cache/forager/`.
 
 environment overrides:
 
-- `FORAGER_CONFIG_DIR` — config directory (default `~/.config/forager`)
-- `FORAGER_CACHE_DIR` — cache directory (default `~/.cache/forager`)
-- `STEAMGRIDDB_API_KEY` — steamgriddb token fallback
+| variable | description | default |
+|----------|-------------|---------|
+| `FORAGER_CONFIG_DIR` | config directory | `~/.config/forager` |
+| `FORAGER_CACHE_DIR` | cache directory | `~/.cache/forager` |
+| `STEAMGRIDDB_API_KEY` | steamgriddb token fallback | — |
 
 ## library layout
 
@@ -124,12 +156,55 @@ your game library folder should look like:
 
 games are detected by an executable or `Game.ini` in the folder.
 
+## roadmap
+
+all core features are implemented. current focus is polish, testing, and packaging for `v1.0.0`.
+
+### done
+
+| feature | version |
+|---------|---------|
+| library view | v0.1.0 |
+| space theme ui | v0.1.0 |
+| gamepad navigation | v0.2.0 |
+| cover art pipeline | v0.2.0 |
+| steam account auth | v0.3.0 |
+| full steam library | v0.3.0 |
+| steam downloads | v0.3.0 |
+| store webview | v0.4.0 |
+| epic games (legendary) | v0.4.0 |
+| gog support | v0.4.0 |
+| steam achievements | v0.5.0 |
+| torrent downloads | v0.5.0 |
+| proton management | v0.5.0 |
+
+### in progress
+
+| feature | target |
+|---------|--------|
+| itch.io store integration | v0.6.0 |
+| custom themes / color schemes | v0.6.0 |
+| download speed limiter | v0.6.0 |
+
+### planned
+
+| feature | target |
+|---------|--------|
+| windows native support | v1.0.0 |
+| macos support | v1.0.0 |
+| plugin system | post-v1.0 |
+| controller rumble support | post-v1.0 |
+| cloud sync (steam cloud) | post-v1.0 |
+
 ## license
 
-AGPL-3.0
+AGPL-3.0 — see [LICENSE](LICENSE) for details.
 
 bundled third-party assets carry their own licenses:
-- [Iconoir](https://iconoir.com) (MIT) — UI icons
-- [VT323](https://github.com/google/fonts/tree/main/ofl/vt323) (SIL OFL 1.1) — placeholder art font
-- [FluentSystemIcons](https://github.com/microsoft/fluentui-system-icons) (MIT) — store webview icons
-- [SpaceTheme](https://github.com/SpaceTheme/Steam) (MIT) — store webview styling
+
+| asset | license |
+|-------|---------|
+| [Iconoir](https://iconoir.com) | MIT — UI icons |
+| [VT323](https://github.com/google/fonts/tree/main/ofl/vt323) | SIL OFL 1.1 — placeholder art font |
+| [FluentSystemIcons](https://github.com/microsoft/fluentui-system-icons) | MIT — store webview icons |
+| [SpaceTheme](https://github.com/SpaceTheme/Steam) | MIT — store webview styling |
