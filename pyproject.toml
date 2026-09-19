@@ -28,7 +28,7 @@ forager = "forager.main:main"
 package-dir = { "" = "src" }
 
 [tool.setuptools.package-data]
-forager = ["assets/icons/*", "assets/fonts/*"]
+forager = ["assets/icons/*", "assets/fonts/*", "ui/pages/*.css", "ui/pages/fonts/*"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
