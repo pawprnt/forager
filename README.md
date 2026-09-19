@@ -12,7 +12,8 @@
 <p align="center">
   <a href="#install"><img src="https://img.shields.io/badge/install-green" alt="install" /></a>
   <a href="#features"><img src="https://img.shields.io/badge/features-blue" alt="features" /></a>
-  <a href="#roadmap"><img src="https://img.shields.io/badge/roadmap-purple" alt="roadmap" /></a>
+  <a href="readme/roadmap.md"><img src="https://img.shields.io/badge/roadmap-purple" alt="roadmap" /></a>
+  <a href="readme/contrib.md"><img src="https://img.shields.io/badge/contributing-blueviolet" alt="contributing" /></a>
   <a href="https://github.com/pawprnt/forager/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-orange" alt="license" /></a>
 </p>
 
@@ -36,7 +37,8 @@
   - [manual](#manual)
 - [configuration](#configuration)
 - [library layout](#library-layout)
-- [roadmap](#roadmap)
+- [roadmap](readme/roadmap.md)
+- [contributing](readme/contrib.md)
 - [license](#license)
 
 ---
@@ -158,43 +160,11 @@ games are detected by an executable or `Game.ini` in the folder.
 
 ## roadmap
 
-all core features are implemented. current focus is polish, testing, and packaging for `v1.0.0`.
+see [readme/roadmap.md](readme/roadmap.md) for the full roadmap.
 
-### done
+## contributing
 
-| feature | version |
-|---------|---------|
-| library view | v0.1.0 |
-| space theme ui | v0.1.0 |
-| gamepad navigation | v0.2.0 |
-| cover art pipeline | v0.2.0 |
-| steam account auth | v0.3.0 |
-| full steam library | v0.3.0 |
-| steam downloads | v0.3.0 |
-| store webview | v0.4.0 |
-| epic games (legendary) | v0.4.0 |
-| gog support | v0.4.0 |
-| steam achievements | v0.5.0 |
-| torrent downloads | v0.5.0 |
-| proton management | v0.5.0 |
-
-### in progress
-
-| feature | target |
-|---------|--------|
-| itch.io store integration | v0.6.0 |
-| custom themes / color schemes | v0.6.0 |
-| download speed limiter | v0.6.0 |
-
-### planned
-
-| feature | target |
-|---------|--------|
-| windows native support | v1.0.0 |
-| macos support | v1.0.0 |
-| plugin system | post-v1.0 |
-| controller rumble support | post-v1.0 |
-| cloud sync (steam cloud) | post-v1.0 |
+see [readme/contrib.md](readme/contrib.md).
 
 ## license
 
