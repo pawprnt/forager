@@ -1,36 +1,45 @@
 { lib
-, buildPythonPackage
+, stdenv
 , fetchFromGitHub
-, setuptools
-, pyside6
-, evdev
-, keyring
-, pillow
-, qrcode
+, cmake
+, pkg-config
+, wrapQtAppsHook
+, qt6
+, libevdev
+, libsecret
+, qrencode
 }:
 
-buildPythonPackage {
+stdenv.mkDerivation {
   pname = "forager";
-  version = "0.5.0";
-  pyproject = true;
+  version = "0.5.0-cpp";
 
   src = fetchFromGitHub {
     owner = "pawprnt";
     repo = "forager";
-    rev = "v0.5.2";
+    rev = "cpp";
     # placeholder — first build will fail with "hash mismatch", nix will print
     # the actual hash. replace this line with the real hash and rebuild.
     hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
   };
 
-  build-system = [ setuptools ];
+  nativeBuildInputs = [
+    cmake
+    pkg-config
+    wrapQtAppsHook
+  ];
 
-  propagatedBuildInputs = [
-    pyside6
-    evdev
-    keyring
-    pillow
-    qrcode
+  buildInputs = [
+    qt6.qtbase
+    qt6.qtwebengine
+    qt6.qtsvg
+    libevdev
+    libsecret
+    qrencode
+  ];
+
+  cmakeFlags = [
+    "-DCMAKE_BUILD_TYPE=Release"
   ];
 
   postInstall = ''
@@ -53,12 +62,11 @@ EOF
     cp $src/readme/forager.svg $out/share/icons/hicolor/scalable/apps/forager.svg
   '';
 
-  pythonImportsCheck = [ "forager" ];
-
   meta = with lib; {
     description = "Steam-like game launcher for your local game library";
     homepage = "https://github.com/pawprnt/forager";
     license = licenses.agpl3Only;
     mainProgram = "forager";
+    platforms = platforms.linux;
   };
 }
