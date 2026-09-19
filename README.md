@@ -38,18 +38,28 @@ all roadmap items are implemented. remaining work before `v1.0.0` is polish, tes
 
 ### nixos
 
-add to your flake inputs:
+add the overlay to your flake:
 
 ```nix
 inputs = {
-  nixpkgs.url = "github:pawprnt/nixpkgs";
+  nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  pawprnt pkgs = {
+    url = "github:pawprnt/nixpkgs";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 };
 ```
 
-then install:
+apply the overlay in your nixos configuration:
 
 ```nix
-environment.systemPackages = [ inputs.nixpkgs.packages.${system}.forager ];
+nixpkgs.overlays = [ inputs.pawprnt-pkgs.overlays.default ];
+```
+
+then install like any other package:
+
+```nix
+environment.systemPackages = [ pkgs.forager ];
 ```
 
 or run directly:

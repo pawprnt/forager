@@ -11,7 +11,7 @@
 
 buildPythonPackage {
   pname = "forager";
-  version = "0.5.1";
+  version = "0.5.0";
   pyproject = true;
 
   src = fetchFromGitHub {
