@@ -13,8 +13,5 @@ public:
     ~Application() override;
 
 private:
-    void setupTheme();
-    void registerFonts();
-
     std::unique_ptr<MainWindow> m_window;
 };

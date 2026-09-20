@@ -53,3 +53,5 @@ private:
 inline uint qHash(const Game& game, uint seed = 0) {
     return qHash(game.identifier(), seed);
 }
+
+Q_DECLARE_METATYPE(Game)

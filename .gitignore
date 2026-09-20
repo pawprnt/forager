@@ -1,12 +1,16 @@
-# --- Local Only / Python Stuff --- #
-__pycache__
-*.pyc
-*.kate-swp
-.pytest_cache
-
-# --- Build / Packaging --- #
-*.egg-info/
+# //--- build ---\\ #
 build/
-dist/
 result/
 compile_commands.json
+
+# //--- packaging ---\\ #
+dist/
+
+# //--- editor ---\\ #
+*.kate-swp
+*.code-workspace
+.vscode/
+.idea/
+
+# //--- cache ---\\ #
+.cache/
