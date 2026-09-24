@@ -40,6 +40,10 @@ static const QString MUTATION_OBSERVER_JS =
         "})()"
     );
 
+QString StorePage::steamRecolorJs() {
+    return STEAM_RECOLOR_JS;
+}
+
 static QPushButton* storeTabButton(const QString& text, QButtonGroup* group, int id) {
     auto* btn = style::button(text, "tab");
     btn->setCheckable(true);

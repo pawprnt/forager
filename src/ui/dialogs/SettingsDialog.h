@@ -20,6 +20,7 @@ class SettingsDialog : public QDialog {
 public:
     explicit SettingsDialog(QWidget* parent = nullptr);
 
+    QStackedWidget* pages() const { return m_pages; }
     QString selectedCardSize() const;
     QString gamesDirText() const;
     QString steamAppcacheText() const;
@@ -35,6 +36,9 @@ private:
     QWidget* buildHeader();
     QWidget* buildNav();
     QWidget* buildFooter();
+    QWidget* buildLibraryTab();
+    QWidget* buildProtonTab();
+    QWidget* buildAccountTab();
     QPushButton* navButton(const QString& text, const QString& icon);
     void switchTab(int index);
 

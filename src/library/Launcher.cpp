@@ -1,4 +1,6 @@
 #include "library/Launcher.h"
+#include "minecraft/Launch.h"
+#include "minecraft/AuthSession.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -23,19 +25,24 @@ static std::unique_ptr<QProcess> launchSteam(const Game& game)
 
 static std::unique_ptr<QProcess> launchMinecraft(const Game& game)
 {
-    return startProcess("prismlauncher", {"-l", game.name()});
+    if (game.path().isEmpty()) return nullptr;
+
+    QString username = QString::fromUtf8(qgetenv("FORAGER_MC_USER"));
+    if (username.isEmpty()) username = QStringLiteral("Player");
+    mc::AuthSession session = mc::makeOfflineSession(username);
+    if (session.playerName.isEmpty()) session = mc::makeOfflineSession(QStringLiteral("Player"));
+
+    return mc::launchInstance(game.path(), session);
 }
 
-static QString findExecutable(const QString& dirPath)
+QString launcher::findExecutable(const QString& dirPath)
 {
     QDir dir(dirPath);
     if (!dir.exists()) return {};
 
-    // Check if the path itself is an executable file
     QFileInfo info(dirPath);
     if (info.isFile() && info.isExecutable()) return dirPath;
 
-    // Search for executables
     for (const auto& pattern : {"*.x86_64", "*.sh", "*.py", "*.exe"}) {
         QStringList files = dir.entryList({pattern}, QDir::Files, QDir::Name);
         if (!files.isEmpty()) return dir.absoluteFilePath(files.first());
@@ -47,7 +54,7 @@ static std::unique_ptr<QProcess> launchStandalone(const Game& game)
 {
     if (game.path().isEmpty()) return nullptr;
 
-    QString exe = findExecutable(game.path());
+    QString exe = launcher::findExecutable(game.path());
     if (exe.isEmpty()) return nullptr;
 
     if (exe.endsWith(".exe")) {

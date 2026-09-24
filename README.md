@@ -36,6 +36,7 @@
   - [aur (arch linux)](#from-the-aur-arch-linux)
   - [flatpak](#from-flatpak)
 - [building](#building)
+- [runtime requirements](#runtime-requirements)
 - [configuration](#configuration)
 - [library layout](#library-layout)
 - [roadmap](docs/roadmap.md)
@@ -65,6 +66,7 @@
 | **torrents** | torrent downloads via libtorrent |
 | **steam achievements** | view your achievements on the game page |
 | **proton** | runs windows `.exe` games through a shared proton prefix |
+| **minecraft** | launches minecraft instances directly (offline, no external launcher) |
 | **tool updates** | keeps bundled tools up to date with live progress |
 
 ## install
@@ -103,7 +105,8 @@ nix run github:pawprnt/nixpkgs#forager
 
 ### from source
 
-requires: cmake, pkg-config, Qt6 (base, webengine, svg), libevdev, libsecret, qrencode, libglvnd
+requires (build): cmake, pkg-config, Qt6 (base, webengine, svg), libevdev, libsecret, qrencode, libglvnd
+runtime extras (optional): see [runtime requirements](#runtime-requirements)
 
 ```bash
 git clone https://github.com/pawprnt/forager.git
@@ -114,16 +117,15 @@ cmake --build build -j$(nproc)
 ./build/forager
 ```
 
-or use the justfile (auto-detects nixos):
+or use the justfile (auto-detects nixos and enters the dev shell when needed):
 
 ```bash
 just build    # configure + build debug
 just run      # build + run
 just release  # build release
+just test     # build + run ctest
 just install  # install to ~/.local
 ```
-
-on nixos, `just run-nix` wraps the binary with the correct qt libs.
 
 ### from the aur (arch linux)
 
@@ -151,6 +153,8 @@ flatpak run io.github.pawprnt.forager
 - qrencode
 - libglvnd (opengl)
 
+runtime-only extras (optional tools for specific features) are listed under [runtime requirements](#runtime-requirements).
+
 ### nixos
 
 ```bash
@@ -168,6 +172,35 @@ cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j$(nproc)
 ./build/forager
 ```
+
+## runtime requirements
+
+these are what the installed app needs at runtime. build tools are covered under [building](#building).
+
+### always needed (linked)
+
+| dependency | why |
+|------------|-----|
+| Qt6: widgets, network, concurrent, webengine, svg | ui, networking, store webview |
+| libevdev | gamepad navigation |
+| libsecret | steam + steamgriddb credentials (keyring) |
+| qrencode | steam qr sign-in |
+| libglvnd (opengl) | rendering |
+
+### feature-triggered (optional)
+
+invoked only when you use the related feature. not required just to launch forager.
+
+| dependency | needed for |
+|------------|------------|
+| `steam` | launching installed steam games |
+| a JRE matching the minecraft version | launching minecraft instances (auto-detected; NixOS fetches into the nix store, other distros offer a package-manager install) |
+| a secret service provider (e.g. keepassxc, gnome-keyring) | reading/writing credentials via libsecret |
+| DepotDownloader | steam game downloads |
+| steamcmd | proton updates |
+| proton | running windows `.exe` games |
+
+DepotDownloader, steamcmd, and proton are managed under forager's cache dir (`~/.cache/forager/` by default) — you don't install them system-wide. Minecraft libraries, assets, and client jar live there too (re-downloaded after cache clears on NixOS).
 
 ## configuration
 
@@ -193,6 +226,9 @@ your game library folder should look like:
 ├── steam/
 │   └── steamapps/
 ├── minecraft/
+│   └── <instance>/
+│       ├── mmc-pack.json
+│       └── .minecraft/
 └── drm-free/
     ├── standalone/
     │   └── <engine>/
@@ -203,7 +239,7 @@ your game library folder should look like:
                 └── <game>/
 ```
 
-games are detected by an executable or `Game.ini` in the folder.
+games are detected by an executable or `Game.ini` in the folder. minecraft instances are folders under `minecraft/`; forager launches them directly with a detected JRE (offline auth — set `FORAGER_MC_USER` to override the default `Player` name).
 
 ## roadmap
 

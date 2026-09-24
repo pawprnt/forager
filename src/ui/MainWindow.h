@@ -28,6 +28,11 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow() override;
 
+    GameGrid* grid() const { return m_grid; }
+    Sidebar* sidebar() const { return m_sidebar; }
+    GamePage* gamePage() const { return m_gamepage; }
+    DownloadsPage* downloadsPage() const { return m_downloadsPage; }
+
 private slots:
     void showHome();
     void showStore();

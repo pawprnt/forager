@@ -38,6 +38,9 @@ class StorePage : public QWidget {
 
 public:
     explicit StorePage(QWidget* parent = nullptr);
+    QStackedWidget* stack() const { return m_stack; }
+    QButtonGroup* tabsGroup() const { return m_tabsGroup; }
+    static QString steamRecolorJs();
 
 private slots:
     void switchTab(QAbstractButton* button);

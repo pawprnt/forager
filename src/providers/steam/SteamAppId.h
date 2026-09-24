@@ -8,9 +8,9 @@ class SteamAppId {
 public:
     static std::optional<QString> resolve(const Game& game);
     static std::optional<QString> resolveByName(const QString& name);
+    static QStringList searchTerms(const Game& game);
+    static bool nameMatches(const QString& query, const QString& storeName);
 
 private:
-    static QStringList searchTerms(const Game& game);
     static std::optional<QString> searchStore(const QString& term);
-    static bool nameMatches(const QString& query, const QString& storeName);
 };

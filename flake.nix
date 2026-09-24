@@ -17,27 +17,6 @@
         default = forager;
       };
 
-      devShells.${system}.default = pkgs.mkShell {
-        nativeBuildInputs = with pkgs; [
-          cmake
-          pkg-config
-          just
-          clang-tools
-        ];
-
-        buildInputs = with pkgs; [
-          qt6.qtbase
-          qt6.qtwebengine
-          qt6.qtsvg
-          libevdev
-          libsecret
-          qrencode
-          libglvnd
-        ];
-
-        shellHook = ''
-          echo "forager cpp dev shell"
-        '';
-      };
+      devShells.${system}.default = import ./nix/shell.nix { inherit pkgs; };
     };
 }

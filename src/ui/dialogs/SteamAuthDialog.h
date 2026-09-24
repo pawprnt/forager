@@ -10,6 +10,13 @@
 #include <QPixmap>
 #include <QMutex>
 #include <QWaitCondition>
+#include <QJsonObject>
+#include <QUrl>
+#include <functional>
+
+class QNetworkAccessManager;
+class QNetworkReply;
+class QUrlQuery;
 
 class SteamAuthWorker : public QThread {
     Q_OBJECT
@@ -32,6 +39,14 @@ protected:
     void run() override;
 
 private:
+    QByteArray waitForReply(QNetworkReply* reply);
+    QJsonObject postForm(QNetworkAccessManager& nam, const QUrl& url, const QUrlQuery& params);
+    QJsonObject postJson(QNetworkAccessManager& nam, const QUrl& url, const QJsonObject& body);
+    bool isCancelled();
+    QString drainCode();
+    bool beginQrSession(QNetworkAccessManager& nam, QString& clientId, QString& requestId, int& interval);
+    bool beginPasswordSession(QNetworkAccessManager& nam, QString& clientId, QString& requestId, int& interval);
+
     QString m_method;
     QString m_username;
     QString m_password;

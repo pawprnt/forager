@@ -3,13 +3,11 @@
 #include "core/Paths.h"
 
 #include <QJsonObject>
-#include <QElapsedTimer>
+#include <QDateTime>
 
 static float nowSeconds()
 {
-    static QElapsedTimer timer;
-    if (!timer.isValid()) timer.start();
-    return timer.elapsed() / 1000.0f;
+    return QDateTime::currentMSecsSinceEpoch() / 1000.0f;
 }
 
 // --- PlaytimeStore ---

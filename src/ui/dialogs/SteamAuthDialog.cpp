@@ -4,10 +4,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QJsonDocument>
-#include <QJsonObject>
 #include <QUrlQuery>
-#include <QImage>
-#include <QThread>
 #include <QCloseEvent>
 #include <QMutexLocker>
 #include <QPainter>
@@ -39,81 +36,54 @@ void SteamAuthWorker::cancel() {
     m_codeReady.wakeOne();
 }
 
+QByteArray SteamAuthWorker::waitForReply(QNetworkReply* reply) {
+    QEventLoop loop;
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QTimer::singleShot(15000, &loop, &QEventLoop::quit);
+    loop.exec();
+    QByteArray data = reply->readAll();
+    reply->deleteLater();
+    return data;
+}
+
+QJsonObject SteamAuthWorker::postForm(QNetworkAccessManager& nam, const QUrl& url, const QUrlQuery& params) {
+    QNetworkRequest req(url);
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+    QNetworkReply* reply = nam.post(req, params.toString(QUrl::FullyEncoded).toUtf8());
+    return QJsonDocument::fromJson(waitForReply(reply)).object();
+}
+
+QJsonObject SteamAuthWorker::postJson(QNetworkAccessManager& nam, const QUrl& url, const QJsonObject& body) {
+    QNetworkRequest req(url);
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QNetworkReply* reply = nam.post(req, QJsonDocument(body).toJson());
+    return QJsonDocument::fromJson(waitForReply(reply)).object();
+}
+
+bool SteamAuthWorker::isCancelled() {
+    QMutexLocker lock(&m_mutex);
+    return m_cancelled;
+}
+
+QString SteamAuthWorker::drainCode() {
+    QMutexLocker lock(&m_mutex);
+    QString code = m_pendingCode;
+    m_pendingCode.clear();
+    return code;
+}
+
 void SteamAuthWorker::run() {
     QNetworkAccessManager nam;
 
-    auto waitForReply = [&](QNetworkReply* reply) -> QByteArray {
-        QEventLoop loop;
-        QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-        QTimer::singleShot(15000, &loop, &QEventLoop::quit);
-        loop.exec();
-        QByteArray data = reply->readAll();
-        reply->deleteLater();
-        return data;
-    };
-
-    auto postForm = [&](const QUrl& url, const QUrlQuery& params) -> QJsonObject {
-        QNetworkRequest req(url);
-        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-        QNetworkReply* reply = nam.post(req, params.toString(QUrl::FullyEncoded).toUtf8());
-        return QJsonDocument::fromJson(waitForReply(reply)).object();
-    };
-
-    auto postJson = [&](const QUrl& url, const QJsonObject& body) -> QJsonObject {
-        QNetworkRequest req(url);
-        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        QNetworkReply* reply = nam.post(req, QJsonDocument(body).toJson());
-        return QJsonDocument::fromJson(waitForReply(reply)).object();
-    };
-
-    auto isCancelled = [&]() -> bool {
-        QMutexLocker lock(&m_mutex);
-        return m_cancelled;
-    };
-
-    auto drainCode = [&]() -> QString {
-        QMutexLocker lock(&m_mutex);
-        QString code = m_pendingCode;
-        m_pendingCode.clear();
-        return code;
-    };
-
     try {
-        QString challengeUrl;
         QString clientId;
         QString requestId;
         int interval = 5;
 
         if (m_method == "qr") {
-            QJsonObject dev;
-            dev["device_name"] = "Forager";
-            dev["device_type"] = 1;
-            dev["os"] = "linux";
-            QJsonObject body;
-            body["device_details"] = dev;
-            QJsonObject resp = postJson(
-                QUrl("https://api.steampowered.com/IAuthenticationService/BeginAuthSessionViaQR/v1/"), body);
-            QJsonObject r = resp.value("response").toObject();
-            challengeUrl = r.value("challenge_url").toString();
-            clientId = QString::number(static_cast<qint64>(r.value("client_id").toDouble()));
-            requestId = QString::number(static_cast<qint64>(r.value("request_id").toDouble()));
-            interval = r.value("interval").toInt(5);
-            emit qrReady(challengeUrl);
-            emit status("Scan the QR code with the Steam mobile app.");
+            if (!beginQrSession(nam, clientId, requestId, interval)) return;
         } else {
-            if (m_username.isEmpty() || m_password.isEmpty()) {
-                emit done(false, "Enter your Steam account name and password.");
-                return;
-            }
-            QJsonObject body;
-            body["account_name"] = m_username;
-            QJsonObject resp = postJson(
-                QUrl("https://api.steampowered.com/IAuthenticationService/BeginAuthSessionViaCredentials/v1/"), body);
-            QJsonObject r = resp.value("response").toObject();
-            clientId = QString::number(static_cast<qint64>(r.value("client_id").toDouble()));
-            requestId = QString::number(static_cast<qint64>(r.value("request_id").toDouble()));
-            interval = r.value("interval").toInt(5);
-            emit status("Enter your credentials.");
+            if (!beginPasswordSession(nam, clientId, requestId, interval)) return;
         }
 
         while (!isCancelled()) {
@@ -122,7 +92,7 @@ void SteamAuthWorker::run() {
                 QUrlQuery params;
                 params.addQueryItem("client_id", clientId);
                 params.addQueryItem("steam_code", code);
-                postForm(QUrl("https://api.steampowered.com/IAuthenticationService/UpdateAuthSessionWithSteamGuardCode/v1/"), params);
+                postForm(nam, QUrl("https://api.steampowered.com/IAuthenticationService/UpdateAuthSessionWithSteamGuardCode/v1/"), params);
                 emit status("Checking your code\u2026");
             }
 
@@ -130,7 +100,7 @@ void SteamAuthWorker::run() {
             pollParams.addQueryItem("client_id", clientId);
             pollParams.addQueryItem("request_id", requestId);
             QJsonObject pollResp = postForm(
-                QUrl("https://api.steampowered.com/IAuthenticationService/PollAuthSessionStatus/v1/"), pollParams);
+                nam, QUrl("https://api.steampowered.com/IAuthenticationService/PollAuthSessionStatus/v1/"), pollParams);
             QJsonObject pollR = pollResp.value("response").toObject();
             QString refreshToken = pollR.value("refresh_token").toString();
             if (!refreshToken.isEmpty()) {
@@ -257,20 +227,6 @@ void SteamAuthDialog::showMode(bool qr) {
         m_pwUser->setFocus();
 }
 
-void SteamAuthDialog::startQr() {
-    m_qrImage->clear();
-    m_status->setText("Starting a secure sign-in\u2026");
-    spawnWorker("qr");
-}
-
-void SteamAuthDialog::refreshQr() {
-    startQr();
-}
-
-void SteamAuthDialog::startPassword() {
-    spawnWorker("password", m_pwUser->text().trimmed(), m_pwPass->text());
-}
-
 void SteamAuthDialog::spawnWorker(const QString& method, const QString& username,
                                    const QString& password) {
     cancelWorker();
@@ -292,11 +248,6 @@ void SteamAuthDialog::cancelWorker() {
         m_worker->wait(8000);
     }
     m_worker = nullptr;
-}
-
-void SteamAuthDialog::onQrReady(const QString& url) {
-    m_qrImage->setPixmap(qrPixmap(url));
-    m_status->setText("Scan the code with the Steam mobile app to approve the sign-in.");
 }
 
 void SteamAuthDialog::onCodeRequested(int codeType, const QString& message) {
@@ -337,17 +288,6 @@ void SteamAuthDialog::onDone(bool ok, const QString& message) {
     m_status->setText(QStringLiteral("Signed in as %1.").arg(message));
     emit loginSucceeded(message);
     accept();
-}
-
-QPixmap SteamAuthDialog::qrPixmap(const QString& url) {
-    Q_UNUSED(url);
-    QPixmap pix(QR_PIXEL_SIZE, QR_PIXEL_SIZE);
-    pix.fill(Qt::white);
-    QPainter p(&pix);
-    p.setPen(Qt::black);
-    p.setFont(QFont("monospace", 10));
-    p.drawText(pix.rect(), Qt::AlignCenter, "QR Code");
-    return pix;
 }
 
 void SteamAuthDialog::cancel() {
