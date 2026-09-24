@@ -24,6 +24,7 @@ private slots:
 
 private:
     void retryCss();
+    void injectCss();
 
     QWebEngineView* m_view = nullptr;
     QUrl m_url;

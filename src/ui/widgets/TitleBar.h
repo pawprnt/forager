@@ -28,7 +28,6 @@ signals:
     void libraryTabRequested();
 
 private:
-    QPushButton* buildTabButton(const QString& text, QButtonGroup* group);
     QPushButton* navButton(const QString& iconName);
 
     QToolButton* _logo;

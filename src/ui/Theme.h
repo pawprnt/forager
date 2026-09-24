@@ -27,6 +27,7 @@ namespace theme {
         constexpr const char* TEXT = "#ffffff";
         constexpr const char* TEXT_DIM = "#8e8e8e";
         constexpr const char* TEXT_MUTED = "#a3aab9";
+        constexpr const char* TEXT_FAINT = "#b8bcbf";
         constexpr int RADIUS = 8;
     } // namespace C
 

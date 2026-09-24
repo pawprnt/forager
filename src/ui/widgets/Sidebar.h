@@ -40,6 +40,8 @@ private slots:
 
 private:
     void rebuildList();
+    void activateItem(QListWidgetItem* item);
+    QListWidgetItem* findItem(const Game& game) const;
 
     QList<Game> m_games;
     QString m_searchText;

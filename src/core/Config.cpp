@@ -1,9 +1,8 @@
 #include "core/Config.h"
 #include "core/Paths.h"
 #include "app/Constants.h"
+#include "utils/Json.h"
 
-#include <QFile>
-#include <QJsonDocument>
 #include <QDir>
 #include <QStandardPaths>
 
@@ -33,26 +32,13 @@ static QJsonObject defaultConfig()
 void Config::load()
 {
     m_path = paths::configDir() + "/settings.json";
-    QFile file(m_path);
-    QJsonObject data;
-
-    if (file.open(QIODevice::ReadOnly)) {
-        QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-        if (doc.isObject()) {
-            data = doc.object();
-        }
-    }
-
-    m_data = deepMerge(defaultConfig(), data);
+    auto data = json::readObject(m_path);
+    m_data = deepMerge(defaultConfig(), data.value_or(QJsonObject{}));
 }
 
 void Config::save()
 {
-    QDir().mkpath(QFileInfo(m_path).absolutePath());
-    QFile file(m_path);
-    if (file.open(QIODevice::WriteOnly)) {
-        file.write(QJsonDocument(m_data).toJson(QJsonDocument::Indented));
-    }
+    json::writeObject(m_path, m_data);
 }
 
 QString Config::gamesDir() const
@@ -78,6 +64,11 @@ bool Config::protonFeature(const QString& name) const
 void Config::setGamesDir(const QString& dir)
 {
     m_data["games_dir"] = dir;
+}
+
+void Config::setSteamAppcache(const QString& path)
+{
+    m_data["steam_appcache"] = path;
 }
 
 void Config::setDisplaySize(const QString& size)

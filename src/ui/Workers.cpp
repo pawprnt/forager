@@ -1,6 +1,9 @@
 #include "ui/Workers.h"
 #include "library/Scanner.h"
+#include "artwork/Pipeline.h"
+#include "artwork/PixmapUtils.h"
 #include <QMutexLocker>
+#include <QBuffer>
 #include <algorithm>
 
 // -- ScanWorker ------------------------------------------------------------
@@ -52,10 +55,17 @@ void DownloadWorker::run() {
 void workers::runArtJob(const QList<Game>& games, ArtSignals* artSignals, std::function<bool()> isStopped) {
     for (const auto& game : games) {
         if (isStopped()) return;
-        if (!game.appId().isEmpty()) {
-            QByteArray data;
-            if (!data.isEmpty())
-                emit artSignals->gridReady(game, data);
+        QPixmap grid = art::loadGrid(game, true);
+        if (!grid.isNull())
+            emit artSignals->gridReady(game, pixmap::toJpeg(grid));
+        if (isStopped()) return;
+        QPixmap icon = art::loadIcon(game, true);
+        if (!icon.isNull()) {
+            QByteArray png;
+            QBuffer buf(&png);
+            buf.open(QIODevice::WriteOnly);
+            if (icon.save(&buf, "PNG"))
+                emit artSignals->iconReady(game, png);
         }
         if (isStopped()) return;
     }
@@ -63,7 +73,7 @@ void workers::runArtJob(const QList<Game>& games, ArtSignals* artSignals, std::f
 
 void workers::runHeroJob(const Game& game, HeroSignals* heroSignals, std::function<bool()> isStopped) {
     if (isStopped()) return;
-    QByteArray data;
-    if (!data.isEmpty())
-        emit heroSignals->ready(game, data);
+    QPixmap pix = art::loadHero(game, true);
+    if (!pix.isNull())
+        emit heroSignals->ready(game, pixmap::toJpeg(pix));
 }

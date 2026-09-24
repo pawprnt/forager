@@ -21,7 +21,7 @@ Sidebar::Sidebar(QWidget* parent)
     : QWidget(parent)
 {
     setFixedWidth(240);
-    setStyleSheet(QStringLiteral("background-color: %1;").arg(COLOR_2));
+    style::background(this, COLOR_2);
 
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(12, 16, 12, 12);
@@ -39,12 +39,7 @@ Sidebar::Sidebar(QWidget* parent)
     m_list->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_list->setIconSize(QSize(22, 22));
     m_list->setSpacing(4);
-    m_list->setStyleSheet(QStringLiteral(
-        "QListWidget { background: transparent; border: none; outline: none; padding-top: 4px; font-size: 12px; }"
-        "QListWidget::item { padding: 3px 8px; border-radius: %1px; color: %2; }"
-        "QListWidget::item:hover { background-color: %3; color: %4; }"
-        "QListWidget::item:selected { background-color: rgba(102, 108, 255, 90); color: %5; }")
-        .arg(RADIUS).arg(TEXT_MUTED).arg(COLOR_3).arg(TEXT).arg(ACCENT_2));
+    m_list->setStyleSheet(style::listQss());
     connect(m_list, &QListWidget::itemSelectionChanged, this, &Sidebar::onSelectionChanged);
     connect(m_list, &QListWidget::itemDoubleClicked, this, &Sidebar::onDoubleClicked);
     layout->addWidget(m_list, 1);
@@ -54,7 +49,7 @@ Sidebar::Sidebar(QWidget* parent)
     layout->addWidget(m_downloadBox);
 
     auto* panel = new QFrame(this);
-    panel->setStyleSheet(QStringLiteral("background-color: %1; border-radius: %2px;").arg(COLOR_3).arg(RADIUS));
+    style::panel(panel, 3);
     auto* panelLayout = new QVBoxLayout(panel);
     panelLayout->setContentsMargins(10, 10, 10, 10);
     panelLayout->setSpacing(8);
@@ -72,19 +67,19 @@ void Sidebar::onSearch(const QString& text) {
     emit searchChanged(m_searchText);
 }
 
-void Sidebar::onSelectionChanged() {
-    auto* item = m_list->currentItem();
+void Sidebar::activateItem(QListWidgetItem* item) {
     if (!item) return;
     auto game = item->data(Qt::UserRole).value<Game>();
     if (!game.name().isEmpty())
         emit gameSelected(game);
 }
 
+void Sidebar::onSelectionChanged() {
+    activateItem(m_list->currentItem());
+}
+
 void Sidebar::onDoubleClicked(QListWidgetItem* item) {
-    if (!item) return;
-    auto game = item->data(Qt::UserRole).value<Game>();
-    if (!game.name().isEmpty())
-        emit gameSelected(game);
+    activateItem(item);
 }
 
 void Sidebar::setGames(const QList<Game>& games) {
@@ -136,24 +131,23 @@ void Sidebar::rebuildList() {
     m_countLabel->setText(QStringLiteral("%1 of %2 games").arg(shown).arg(total));
 }
 
-void Sidebar::setGameArt(const Game& game, const QPixmap& pix) {
+QListWidgetItem* Sidebar::findItem(const Game& game) const {
     for (int i = 0; i < m_list->count(); ++i) {
         auto* item = m_list->item(i);
-        if (item->data(Qt::UserRole).value<Game>() == game) {
-            item->setIcon(QIcon(pix));
-            return;
-        }
+        if (item->data(Qt::UserRole).value<Game>() == game)
+            return item;
     }
+    return nullptr;
+}
+
+void Sidebar::setGameArt(const Game& game, const QPixmap& pix) {
+    if (auto* item = findItem(game))
+        item->setIcon(QIcon(pix));
 }
 
 void Sidebar::selectGame(const Game& game) {
-    for (int i = 0; i < m_list->count(); ++i) {
-        auto* item = m_list->item(i);
-        if (item->data(Qt::UserRole).value<Game>() == game) {
-            m_list->setCurrentItem(item);
-            return;
-        }
-    }
+    if (auto* item = findItem(game))
+        m_list->setCurrentItem(item);
 }
 
 bool Sidebar::focusNext(int direction) {

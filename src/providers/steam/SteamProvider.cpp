@@ -18,9 +18,7 @@ bool SteamProvider::isConfigured() const
 
 std::vector<OwnedGame> SteamProvider::listOwned(const QString& account) const
 {
-    if (!isConfigured()) {
-        throw BackendNotConfigured("Steam credentials not configured");
-    }
+    requireConfigured("Steam credentials not configured");
 
     auto owned = m_library->fetchOwnedGames();
 
@@ -42,9 +40,7 @@ std::vector<OwnedGame> SteamProvider::listOwned(const QString& account) const
 void SteamProvider::download(const QString& appId, const QString& destination,
                              ProgressFn onProgress, std::atomic<bool>* cancel)
 {
-    if (!isConfigured()) {
-        throw BackendNotConfigured("Steam credentials not configured");
-    }
+    requireConfigured("Steam credentials not configured");
 
     m_downloader->download(appId, destination, onProgress, cancel);
 }

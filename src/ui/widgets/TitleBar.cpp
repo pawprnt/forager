@@ -16,11 +16,12 @@
 using namespace theme;
 using namespace theme::C;
 
-static const char* NAV_TAB_QSS =
-    "QPushButton { background: transparent; border: none; border-bottom: 3px solid transparent; "
-    "color: #8b929a; font-size: 14px; padding: 8px 14px 5px 14px; } "
-    "QPushButton:hover { color: #ffffff; } "
-    "QPushButton:checked { color: %1; border-bottom: 3px solid %1; }";
+static QPushButton* navTabButton(const QString& text, QButtonGroup* group) {
+    auto* btn = style::button(text, "navtab");
+    btn->setCheckable(true);
+    group->addButton(btn);
+    return btn;
+}
 
 TitleBar::TitleBar(QWidget* parent)
     : QWidget(parent)
@@ -60,13 +61,11 @@ TitleBar::TitleBar(QWidget* parent)
     lay->addStretch(1);
 
     auto* tabBar = new QWidget();
-    auto* tabLay = new QHBoxLayout(tabBar);
-    tabLay->setContentsMargins(0, 0, 0, 0);
-    tabLay->setSpacing(0);
+    auto* tabLay = style::hbox(tabBar);
     _tabsGroup = new QButtonGroup(this);
     _tabsGroup->setExclusive(true);
-    _storeTab = buildTabButton("Store", _tabsGroup);
-    _libraryTab = buildTabButton("Library", _tabsGroup);
+    _storeTab = navTabButton("Store", _tabsGroup);
+    _libraryTab = navTabButton("Library", _tabsGroup);
     tabLay->addWidget(_storeTab);
     tabLay->addWidget(_libraryTab);
     connect(_storeTab, &QPushButton::clicked, this, &TitleBar::storeTabRequested);
@@ -76,36 +75,21 @@ TitleBar::TitleBar(QWidget* parent)
 
     lay->addStretch(1);
 
-    _updatePill = new QPushButton();
-    _updatePill->setCursor(Qt::PointingHandCursor);
-    _updatePill->setStyleSheet(style::pillQss());
+    _updatePill = style::button(QString(), "pill");
     _updatePill->hide();
     connect(_updatePill, &QPushButton::clicked, this, &TitleBar::runUpdatesRequested);
     lay->addWidget(_updatePill);
 
     _controllerHint = new QLabel("");
-    _controllerHint->setStyleSheet(
-        QStringLiteral("color: %1; background: transparent; font-size: 11px; padding: 4px 8px;")
-            .arg(TEXT_DIM));
+    style::label(_controllerHint, TEXT_DIM, 11, -1, "padding: 4px 8px;");
     lay->addWidget(_controllerHint);
 }
 
-QPushButton* TitleBar::buildTabButton(const QString& text, QButtonGroup* group) {
-    auto* btn = new QPushButton(text);
-    btn->setCheckable(true);
-    btn->setCursor(Qt::PointingHandCursor);
-    btn->setStyleSheet(QString(NAV_TAB_QSS).arg(ACCENT_1));
-    group->addButton(btn);
-    return btn;
-}
-
 QPushButton* TitleBar::navButton(const QString& iconName) {
-    auto* btn = new QPushButton();
+    auto* btn = style::button(QString(), "icon");
     btn->setFixedSize(32, 32);
     btn->setIcon(icons::loadIcon(iconName, TEXT));
     btn->setIconSize(QSize(18, 18));
-    btn->setCursor(Qt::PointingHandCursor);
-    btn->setStyleSheet(style::iconButtonQss());
     return btn;
 }
 

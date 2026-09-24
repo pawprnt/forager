@@ -2,18 +2,9 @@
 #include "ui/pages/Downloads.h"
 #include "ui/Theme.h"
 #include "ui/Style.h"
+#include "utils/Format.h"
 
 using namespace theme::C;
-
-static QString formatSize(double num) {
-    const char* units[] = {"B", "KB", "MB", "GB", "TB"};
-    for (int i = 0; i < 5; ++i) {
-        if (num < 1024)
-            return QStringLiteral("%1 %2").arg(num, 0, 'f', 1).arg(units[i]);
-        num /= 1024;
-    }
-    return QStringLiteral("%1 PB").arg(num, 0, 'f', 1);
-}
 
 DownloadBox::DownloadBox(QWidget* parent)
     : QFrame(parent)
@@ -44,7 +35,7 @@ DownloadBox::DownloadBox(QWidget* parent)
     layout->addWidget(m_bar);
 
     m_detail = new QLabel();
-    style::label(m_detail, "#b8bcbf", 11);
+    style::label(m_detail, TEXT_FAINT, 11);
     layout->addWidget(m_detail);
 
     hide();
@@ -68,9 +59,9 @@ void DownloadBox::setProgress(double percent, const QString& stage, double speed
     m_bar->setValue(percent);
     if (stage.toLower() == "downloading") {
         QStringList bits;
-        bits << QStringLiteral("%1 / %2").arg(formatSize(done), formatSize(total));
+        bits << QStringLiteral("%1 / %2").arg(format::size(done), format::size(total));
         if (speed > 0)
-            bits << QStringLiteral("%1/s").arg(formatSize(speed));
+            bits << QStringLiteral("%1/s").arg(format::size(speed));
         m_detail->setText(bits.join(" \u00b7 "));
     } else {
         m_detail->setText(QStringLiteral("%1\u2026").arg(stage));

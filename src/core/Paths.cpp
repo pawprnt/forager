@@ -1,4 +1,5 @@
 #include "core/Paths.h"
+#include "core/Config.h"
 #include "app/Constants.h"
 
 #include <QDir>
@@ -26,45 +27,34 @@ QString cacheDir()
         QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
 }
 
+QString cacheSub(const QString& name)
+{
+    return cacheDir() + "/" + name;
+}
+
 QString gamesDir()
 {
-    return QDir::homePath() + "/Games";
+    return Config::instance().gamesDir();
 }
 
 QString steamAppcacheDir()
 {
-    return QDir::homePath()
-        + "/.local/share/Steam/appcache/librarycache";
+    return Config::instance().steamAppcache();
 }
 
-QString protonDir()
-{
-    return cacheDir() + "/proton";
-}
-
-QString protonPrefixDir()
-{
-    return cacheDir() + "/proton-prefix";
-}
-
-QString artCacheDir()
-{
-    return cacheDir() + "/art";
-}
-
-QString iconCacheDir()
-{
-    return cacheDir() + "/icons";
-}
-
-QString bannerCacheDir()
-{
-    return cacheDir() + "/banners";
-}
+QString protonDir() { return cacheSub("proton"); }
+QString protonPrefixDir() { return cacheSub("proton-prefix"); }
+QString artCacheDir() { return cacheSub("art"); }
+QString iconCacheDir() { return cacheSub("icons"); }
+QString bannerCacheDir() { return cacheSub("banners"); }
 
 QString playtimeFile()
 {
     return configDir() + "/playtime.json";
 }
+
+QString steamRoot() { return QDir::homePath() + "/.local/share/Steam"; }
+QString depotDownloaderDir() { return cacheSub("depotdownloader"); }
+QString steamCmdDir() { return cacheSub("steamcmd"); }
 
 } // namespace paths

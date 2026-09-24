@@ -1,8 +1,7 @@
 #include "library/Playtime.h"
+#include "utils/Json.h"
+#include "core/Paths.h"
 
-#include <QDir>
-#include <QFile>
-#include <QJsonDocument>
 #include <QJsonObject>
 #include <QElapsedTimer>
 
@@ -17,21 +16,18 @@ static float nowSeconds()
 
 PlaytimeStore::PlaytimeStore(const QString& path, QObject* parent)
     : QObject(parent)
-    , m_path(path.isEmpty() ? QDir::homePath() + "/.config/forager/playtime.json" : path)
+    , m_path(path.isEmpty() ? paths::playtimeFile() : path)
 {
     load();
 }
 
 void PlaytimeStore::load()
 {
-    QFile f(m_path);
-    if (!f.open(QIODevice::ReadOnly)) return;
+    auto data = json::readObject(m_path);
+    if (!data) return;
 
-    QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
-    if (doc.isObject()) {
-        QMutexLocker lock(&m_mutex);
-        m_data = doc.object();
-    }
+    QMutexLocker lock(&m_mutex);
+    m_data = *data;
 }
 
 void PlaytimeStore::save()
@@ -42,11 +38,7 @@ void PlaytimeStore::save()
         snapshot = m_data;
     }
 
-    QDir().mkpath(QFileInfo(m_path).absolutePath());
-    QFile f(m_path);
-    if (f.open(QIODevice::WriteOnly)) {
-        f.write(QJsonDocument(snapshot).toJson(QJsonDocument::Indented));
-    }
+    json::writeObject(m_path, snapshot);
 }
 
 float PlaytimeStore::playtime(const QString& key) const
@@ -61,23 +53,29 @@ float PlaytimeStore::lastPlayed(const QString& key) const
     return m_data[key].toObject()["last_played"].toDouble(0.0);
 }
 
-void PlaytimeStore::touch(const QString& key)
+void PlaytimeStore::mutateEntry(const QString& key, const std::function<void(QJsonObject&)>& fn)
 {
     QMutexLocker lock(&m_mutex);
     QJsonObject entry = m_data[key].toObject();
-    entry["last_played"] = nowSeconds();
-    if (!entry.contains("playtime")) entry["playtime"] = 0.0;
+    fn(entry);
     m_data[key] = entry;
+}
+
+void PlaytimeStore::touch(const QString& key)
+{
+    mutateEntry(key, [](QJsonObject& entry) {
+        entry["last_played"] = nowSeconds();
+        if (!entry.contains("playtime")) entry["playtime"] = 0.0;
+    });
 }
 
 void PlaytimeStore::add(const QString& key, float seconds)
 {
     if (seconds <= 0) return;
-    QMutexLocker lock(&m_mutex);
-    QJsonObject entry = m_data[key].toObject();
-    entry["playtime"] = entry["playtime"].toDouble(0.0) + seconds;
-    if (!entry.contains("last_played")) entry["last_played"] = 0.0;
-    m_data[key] = entry;
+    mutateEntry(key, [seconds](QJsonObject& entry) {
+        entry["playtime"] = entry["playtime"].toDouble(0.0) + seconds;
+        if (!entry.contains("last_played")) entry["last_played"] = 0.0;
+    });
 }
 
 QString PlaytimeStore::gameKey(const Game& game)
@@ -133,30 +131,26 @@ bool PlaytimeTracker::tick()
     auto it = m_sessions.begin();
     while (it != m_sessions.end()) {
         auto& sess = it.value();
-        bool running = sess.proc && sess.proc->state() != QProcess::NotRunning;
+        if (flushSession(it.key(), sess, current)) dirty = true;
 
-        if (running) {
-            float elapsed = current - sess.last;
-            if (elapsed > 0) {
-                m_store->add(it.key(), elapsed);
-                dirty = true;
-            }
+        if (sess.proc && sess.proc->state() != QProcess::NotRunning) {
             sess.last = current;
             ++it;
         } else {
-            if (sess.proc) {
-                float elapsed = current - sess.last;
-                if (elapsed > 0) {
-                    m_store->add(it.key(), elapsed);
-                    dirty = true;
-                }
-            }
             it = m_sessions.erase(it);
         }
     }
 
     if (dirty) m_store->save();
     return dirty;
+}
+
+bool PlaytimeTracker::flushSession(const QString& key, Session& sess, float now)
+{
+    float elapsed = now - sess.last;
+    if (elapsed <= 0) return false;
+    m_store->add(key, elapsed);
+    return true;
 }
 
 void PlaytimeTracker::flush()
@@ -182,8 +176,7 @@ bool PlaytimeTracker::stop(const Game& game)
 
     auto& sess = it.value();
     if (sess.proc && sess.proc->state() != QProcess::NotRunning) {
-        float elapsed = nowSeconds() - sess.last;
-        if (elapsed > 0) m_store->add(key, elapsed);
+        flushSession(key, sess, nowSeconds());
 
         sess.proc->terminate();
         if (!sess.proc->waitForFinished(2000)) {

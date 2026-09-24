@@ -40,17 +40,22 @@ static const QString MUTATION_OBSERVER_JS =
         "})()"
     );
 
+static QPushButton* storeTabButton(const QString& text, QButtonGroup* group, int id) {
+    auto* btn = style::button(text, "tab");
+    btn->setCheckable(true);
+    group->addButton(btn, id);
+    return btn;
+}
+
 // -- WebStorePane ----------------------------------------------------------
 
 WebStorePane::WebStorePane(const QUrl& url, QWidget* parent)
     : QWidget(parent), m_url(url)
 {
-    auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(0);
+    auto* layout = style::vbox(this);
 
     m_view = new QWebEngineView();
-    m_view->setStyleSheet("background-color: #111111;");
+    style::background(m_view, COLOR_1);
     m_view->setVisible(false);
     connect(m_view, &QWebEngineView::loadFinished, this, &WebStorePane::onLoadFinished);
     layout->addWidget(m_view);
@@ -66,20 +71,7 @@ void WebStorePane::load() {
 
 void WebStorePane::onLoadFinished(bool ok) {
     if (!m_view || !ok) return;
-    m_view->page()->runJavaScript(STEAM_RECOLOR_JS);
-    m_view->page()->runJavaScript(MUTATION_OBSERVER_JS);
-    m_view->page()->runJavaScript(
-        "document.getElementById('spacetheme-css') !== null",
-        [this](const QVariant& result) {
-            bool found = result.toBool();
-            if (found && !m_cssInjected) {
-                m_cssInjected = true;
-                m_view->setVisible(true);
-            } else if (!found) {
-                QTimer::singleShot(200, this, &WebStorePane::retryCss);
-            }
-        }
-    );
+    retryCss();
 }
 
 void WebStorePane::retryCss() {
@@ -89,16 +81,19 @@ void WebStorePane::retryCss() {
         m_view->setVisible(true);
         return;
     }
+    injectCss();
+}
+
+void WebStorePane::injectCss() {
     m_view->page()->runJavaScript(STEAM_RECOLOR_JS);
     m_view->page()->runJavaScript(MUTATION_OBSERVER_JS);
     m_view->page()->runJavaScript(
         "document.getElementById('spacetheme-css') !== null",
         [this](const QVariant& result) {
-            bool found = result.toBool();
-            if (found && !m_cssInjected) {
+            if (result.toBool() && !m_cssInjected) {
                 m_cssInjected = true;
                 m_view->setVisible(true);
-            } else if (!found) {
+            } else if (!result.toBool()) {
                 QTimer::singleShot(200, this, &WebStorePane::retryCss);
             }
         }
@@ -110,15 +105,11 @@ void WebStorePane::retryCss() {
 StorePage::StorePage(QWidget* parent)
     : QWidget(parent)
 {
-    setStyleSheet(QStringLiteral("background-color: %1;").arg(C::BG));
-    auto* layout = new QVBoxLayout(this);
+    style::background(this, C::BG);
+    auto* layout = style::vbox(this, 12);
     layout->setContentsMargins(24, 18, 24, 18);
-    layout->setSpacing(12);
 
-    auto* header = new QLabel("Store");
-    QFont headerFont(fonts::UI_FONT, 22, QFont::Bold);
-    header->setFont(headerFont);
-    style::label(header, C::TEXT);
+    auto* header = style::heading("Store", 22);
     layout->addWidget(header);
 
     m_stack = new QStackedWidget();
@@ -134,26 +125,15 @@ StorePage::StorePage(QWidget* parent)
 
 QWidget* StorePage::buildTabs() {
     auto* bar = new QWidget();
-    bar->setStyleSheet(QStringLiteral("background-color: %1; border-radius: %2px;").arg(C::COLOR_2).arg(C::RADIUS));
+    style::panel(bar, 2);
     auto* barLayout = new QHBoxLayout(bar);
     barLayout->setContentsMargins(6, 6, 6, 6);
     barLayout->setSpacing(6);
 
     m_tabsGroup = new QButtonGroup(this);
     m_tabsGroup->setExclusive(true);
-    for (int i = 0; i < STORES.size(); ++i) {
-        auto* btn = new QPushButton(STORES[i]);
-        btn->setCheckable(true);
-        btn->setCursor(Qt::PointingHandCursor);
-        btn->setStyleSheet(QStringLiteral(
-            "QPushButton { background-color: %1; color: #a9a9a9; border: none; "
-            "border-radius: %2px; padding: 6px 16px; font-size: 14px; } "
-            "QPushButton:hover { background-color: %3; color: %4; } "
-            "QPushButton:checked { background-color: %5; color: %6; font-weight: 600; }")
-            .arg(C::COLOR_3).arg(C::RADIUS).arg(C::COLOR_4).arg(C::TEXT).arg(C::ACCENT_1).arg(C::TEXT));
-        m_tabsGroup->addButton(btn, i);
-        barLayout->addWidget(btn);
-    }
+    for (int i = 0; i < STORES.size(); ++i)
+        barLayout->addWidget(storeTabButton(STORES[i], m_tabsGroup, i));
     connect(m_tabsGroup, &QButtonGroup::buttonClicked, this, &StorePage::switchTab);
     m_tabsGroup->button(0)->setChecked(true);
     return bar;

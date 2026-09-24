@@ -3,22 +3,13 @@
 #include "ui/Style.h"
 #include "ui/Icons.h"
 #include "ui/Fonts.h"
+#include "utils/Format.h"
 #include <QPainter>
 #include <QLinearGradient>
 #include <QFileInfo>
 
 using namespace theme;
 using namespace theme::C;
-
-static QString formatSize(double num) {
-    const char* units[] = {"B", "KB", "MB", "GB", "TB"};
-    for (int i = 0; i < 5; ++i) {
-        if (num < 1024)
-            return QStringLiteral("%1 %2").arg(num, 0, 'f', 1).arg(units[i]);
-        num /= 1024;
-    }
-    return QStringLiteral("%1 PB").arg(num, 0, 'f', 1);
-}
 
 static QString formatEta(double seconds) {
     int s = qMax(0, static_cast<int>(seconds));
@@ -27,6 +18,15 @@ static QString formatEta(double seconds) {
     if (m > 0)
         return QStringLiteral("%1m %2s").arg(m).arg(s, 2, 10, QChar('0'));
     return QStringLiteral("%1s").arg(s);
+}
+
+static QLabel* makeChip(const QString& iconName, const QString& iconColor, int iconPx, int boxPx) {
+    auto* chip = new QLabel();
+    chip->setPixmap(icons::loadIcon(iconName, iconColor).pixmap(iconPx, iconPx));
+    chip->setFixedSize(boxPx, boxPx);
+    chip->setAlignment(Qt::AlignCenter);
+    style::panel(chip, 3, 6);
+    return chip;
 }
 
 // -- ProgressBar -----------------------------------------------------------
@@ -66,9 +66,7 @@ public:
         setMinimumHeight(230);
         m_watermark = icons::loadIcon("download", C::TEXT).pixmap(170, 170);
 
-        auto* layout = new QVBoxLayout(this);
-        layout->setContentsMargins(0, 0, 0, 0);
-        layout->setSpacing(0);
+        auto* layout = style::vbox(this);
 
         auto* info = new QHBoxLayout();
         info->setContentsMargins(28, 26, 28, 0);
@@ -132,20 +130,14 @@ public:
     explicit StatItem(const QString& iconName, const QString& caption, bool accent = false, QWidget* parent = nullptr)
         : QWidget(parent)
     {
-        auto* lay = new QHBoxLayout(this);
-        lay->setContentsMargins(0, 0, 0, 0);
-        lay->setSpacing(10);
+        auto* lay = style::hbox(this, 10);
 
-        auto* chip = new QLabel();
-        chip->setPixmap(icons::loadIcon(iconName, C::ACCENT_1).pixmap(18, 18));
-        chip->setFixedSize(36, 36);
-        chip->setAlignment(Qt::AlignCenter);
-        chip->setStyleSheet(QStringLiteral("background-color: %1; border-radius: 6px;").arg(C::COLOR_3));
+        auto* chip = makeChip(iconName, C::ACCENT_1, 18, 36);
 
         auto* text = new QVBoxLayout();
         text->setSpacing(1);
         auto* cap = new QLabel(caption);
-        style::label(cap, "#b8bcbf", 11);
+        style::label(cap, TEXT_FAINT, 11);
         m_value = new QLabel("\u2014");
         style::label(m_value, accent ? C::ACCENT_1 : C::TEXT, 15, 700);
         text->addWidget(cap);
@@ -165,24 +157,18 @@ private:
 DownloadsPage::DownloadsPage(QWidget* parent)
     : QWidget(parent)
 {
-    setStyleSheet(QStringLiteral("background-color: %1;").arg(C::BG));
-    auto* layout = new QVBoxLayout(this);
+    style::background(this, C::BG);
+    auto* layout = style::vbox(this, 12);
     layout->setContentsMargins(12, 8, 12, 12);
-    layout->setSpacing(12);
 
     auto* header = new QHBoxLayout();
     header->setContentsMargins(12, 8, 12, 0);
-    auto* title = new QLabel("Downloads");
-    QFont titleFont(fonts::UI_FONT, 20, QFont::Bold);
-    title->setFont(titleFont);
-    style::label(title, C::TEXT);
-    auto* gear = new QPushButton();
+    auto* title = style::heading("Downloads", 20);
+    auto* gear = style::button(QString(), "bare");
     gear->setIcon(icons::loadIcon("settings", C::TEXT));
     gear->setIconSize(QSize(18, 18));
     gear->setFixedSize(28, 28);
-    gear->setCursor(Qt::PointingHandCursor);
     gear->setToolTip("Download settings");
-    gear->setStyleSheet("QPushButton { background: transparent; border: none; border-radius: 6px; padding: 0; }");
     connect(gear, &QPushButton::clicked, this, &DownloadsPage::settingsRequested);
     header->addWidget(title);
     header->addStretch(1);
@@ -207,10 +193,7 @@ DownloadsPage::DownloadsPage(QWidget* parent)
     auto* queue = new QVBoxLayout();
     queue->setContentsMargins(12, 8, 12, 0);
     queue->setSpacing(8);
-    auto* qheader = new QLabel("Updates");
-    QFont qheaderFont(fonts::UI_FONT, 15, QFont::Bold);
-    qheader->setFont(qheaderFont);
-    style::label(qheader, C::TEXT);
+    auto* qheader = style::heading("Updates", 15);
     queue->addWidget(qheader);
 
     m_item = new QFrame();
@@ -220,19 +203,14 @@ DownloadsPage::DownloadsPage(QWidget* parent)
     itemLay->setContentsMargins(16, 12, 16, 12);
     itemLay->setSpacing(14);
 
-    auto* chip = new QLabel();
-    chip->setPixmap(icons::loadIcon("download", C::ACCENT_2).pixmap(20, 20));
-    chip->setFixedSize(34, 34);
-    chip->setAlignment(Qt::AlignCenter);
-    chip->setStyleSheet(QStringLiteral("background-color: %1; border-radius: 6px;").arg(C::COLOR_3));
-    itemLay->addWidget(chip);
+    itemLay->addWidget(makeChip("download", C::ACCENT_2, 20, 34));
 
     auto* col = new QVBoxLayout();
     col->setSpacing(2);
     m_itemName = new QLabel();
     style::label(m_itemName, C::TEXT, 13, 600);
     m_itemStatus = new QLabel();
-    style::label(m_itemStatus, "#b8bcbf");
+    style::label(m_itemStatus, TEXT_FAINT);
     col->addWidget(m_itemName);
     col->addWidget(m_itemStatus);
     itemLay->addLayout(col);
@@ -242,11 +220,7 @@ DownloadsPage::DownloadsPage(QWidget* parent)
     m_itemBar->setFixedWidth(220);
     itemLay->addWidget(m_itemBar);
 
-    m_itemCancel = new QPushButton("Cancel");
-    m_itemCancel->setStyleSheet(QStringLiteral(
-        "QPushButton { background-color: %1; color: %2; border: none; border-radius: %3px; padding: 5px 14px; } "
-        "QPushButton:hover { background-color: %4; }")
-        .arg(C::COLOR_3, C::TEXT).arg(C::RADIUS).arg(C::COLOR_1));
+    m_itemCancel = style::button("Cancel", "quiet");
     connect(m_itemCancel, &QPushButton::clicked, this, &DownloadsPage::cancelRequested);
     itemLay->addWidget(m_itemCancel);
     queue->addWidget(m_item);
@@ -274,15 +248,19 @@ void DownloadsPage::setIdle() {
     refreshSpace();
 }
 
+void DownloadsPage::setStatus(const QString& status) {
+    m_banner->setStatus(status);
+    m_itemStatus->setText(status);
+}
+
 void DownloadsPage::begin(const QString& name) {
     m_banner->show();
     m_item->show();
     m_empty->hide();
     m_banner->setTitle(name);
-    m_banner->setStatus("Waiting to start\u2026");
+    setStatus("Waiting to start\u2026");
     m_banner->setBar(0);
     m_itemName->setText(name);
-    m_itemStatus->setText("Waiting to start\u2026");
     m_itemBar->setValue(0);
     m_itemCancel->show();
     m_speedStat->setValue("\u2014");
@@ -297,13 +275,12 @@ void DownloadsPage::setProgress(double percent, const QString& stage, double spe
     else
         status = QStringLiteral("%1\u2026 \u00b7 %2%").arg(stage).arg(static_cast<int>(percent));
 
-    m_banner->setStatus(status);
+    setStatus(status);
     m_banner->setBar(percent);
-    m_itemStatus->setText(status);
     m_itemBar->setValue(percent);
 
     if (stage.toLower() == "downloading" && speed > 0) {
-        m_speedStat->setValue(QStringLiteral("%1/s").arg(formatSize(speed)));
+        m_speedStat->setValue(QStringLiteral("%1/s").arg(format::size(speed)));
         double remaining = total - done;
         m_timeStat->setValue(remaining > 0 ? formatEta(remaining / speed) : "\u2014");
     } else {
@@ -314,9 +291,8 @@ void DownloadsPage::setProgress(double percent, const QString& stage, double spe
 
 void DownloadsPage::finish(const QString& status) {
     m_itemCancel->hide();
-    m_banner->setStatus(status);
+    setStatus(status);
     m_banner->setBar(100);
-    m_itemStatus->setText(status);
     m_itemBar->setValue(100);
     m_speedStat->setValue("\u2014");
     m_timeStat->setValue("\u2014");

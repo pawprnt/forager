@@ -2,7 +2,6 @@
 
 #include <QString>
 #include <QJsonObject>
-#include <QDir>
 
 class Config {
 public:
@@ -17,6 +16,7 @@ public:
     bool protonFeature(const QString& name) const;
 
     void setGamesDir(const QString& dir);
+    void setSteamAppcache(const QString& path);
     void setDisplaySize(const QString& size);
 
     const QJsonObject& data() const { return m_data; }

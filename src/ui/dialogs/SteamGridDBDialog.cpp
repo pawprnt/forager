@@ -1,5 +1,6 @@
 #include "ui/dialogs/SteamGridDBDialog.h"
 #include "ui/Theme.h"
+#include "ui/Style.h"
 #include <QCloseEvent>
 
 using namespace theme::C;
@@ -26,11 +27,9 @@ SteamGridDBTokenDialog::SteamGridDBTokenDialog(QWidget* parent)
     setModal(true);
     resize(900, 640);
     setMinimumSize(640, 480);
-    setStyleSheet(QStringLiteral("background-color: %1;").arg(COLOR_1));
+    style::background(this, COLOR_1);
 
-    auto* lay = new QVBoxLayout(this);
-    lay->setContentsMargins(0, 0, 0, 0);
-    lay->setSpacing(0);
+    auto* lay = style::vbox(this);
 
     m_view = new QWebEngineView(this);
     lay->addWidget(m_view, 1);
@@ -40,9 +39,8 @@ SteamGridDBTokenDialog::SteamGridDBTokenDialog(QWidget* parent)
         "it's free and takes one click. We'll jump to your API key page next.");
     m_status->setObjectName("sgdbStatus");
     m_status->setWordWrap(true);
-    m_status->setStyleSheet(QStringLiteral(
-        "color: %1; font-size: 11px; background: %2; padding: 6px 12px;")
-        .arg(TEXT_DIM, COLOR_2));
+    style::label(m_status, TEXT_DIM, 11, -1,
+        QStringLiteral("background: %1; padding: 6px 12px;").arg(COLOR_2));
     lay->addWidget(m_status);
 
     connect(m_view, &QWebEngineView::loadFinished, this, &SteamGridDBTokenDialog::onLoadFinished);

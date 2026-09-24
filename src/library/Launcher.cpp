@@ -4,24 +4,26 @@
 #include <QFileInfo>
 #include <QProcess>
 
-static std::unique_ptr<QProcess> launchSteam(const Game& game)
+static std::unique_ptr<QProcess> startProcess(const QString& program, const QStringList& args,
+                                              const QString& cwd = {})
 {
     auto proc = std::make_unique<QProcess>();
-    proc->setProgram("steam");
-    proc->setArguments({QString("steam://rungameid/%1").arg(game.appId())});
+    if (!cwd.isEmpty()) proc->setWorkingDirectory(cwd);
+    proc->setProgram(program);
+    proc->setArguments(args);
     proc->setProcessChannelMode(QProcess::ForwardedChannels);
     proc->start();
     return proc;
 }
 
+static std::unique_ptr<QProcess> launchSteam(const Game& game)
+{
+    return startProcess("steam", {QString("steam://rungameid/%1").arg(game.appId())});
+}
+
 static std::unique_ptr<QProcess> launchMinecraft(const Game& game)
 {
-    auto proc = std::make_unique<QProcess>();
-    proc->setProgram("prismlauncher");
-    proc->setArguments({"-l", game.name()});
-    proc->setProcessChannelMode(QProcess::ForwardedChannels);
-    proc->start();
-    return proc;
+    return startProcess("prismlauncher", {"-l", game.name()});
 }
 
 static QString findExecutable(const QString& dirPath)
@@ -48,18 +50,12 @@ static std::unique_ptr<QProcess> launchStandalone(const Game& game)
     QString exe = findExecutable(game.path());
     if (exe.isEmpty()) return nullptr;
 
-    auto proc = std::make_unique<QProcess>();
-    proc->setWorkingDirectory(game.path());
-
     if (exe.endsWith(".exe")) {
         // TODO: launch via proton
         return nullptr;
     }
 
-    proc->setProgram(exe);
-    proc->setProcessChannelMode(QProcess::ForwardedChannels);
-    proc->start();
-    return proc;
+    return startProcess(exe, {}, game.path());
 }
 
 std::unique_ptr<QProcess> launcher::launch(const Game& game)

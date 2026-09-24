@@ -1,5 +1,12 @@
 #include "providers/Provider.h"
 
+void Provider::requireConfigured(const char* msg) const
+{
+    if (!isConfigured()) {
+        throw BackendNotConfigured(msg);
+    }
+}
+
 ProviderRegistry& ProviderRegistry::instance()
 {
     static ProviderRegistry s_instance;

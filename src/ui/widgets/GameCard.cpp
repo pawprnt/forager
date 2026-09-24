@@ -13,7 +13,6 @@
 using namespace theme::C;
 
 static float easeOutCubic(float t) { return 1.0f - std::pow(1.0f - t, 3.0f); }
-static float easeInOutCubic(float t) { return t < 0.5f ? 4*t*t*t : 1-std::pow(-2*t+2,3)/2; }
 
 static QColor withAlpha(const QColor& c, int a) {
     return QColor(c.red(), c.green(), c.blue(), a);
@@ -98,9 +97,7 @@ void GameCard::paintPlaceholder(QPainter& p, int w, int h, const QRectF& target)
     QFont font(fonts::UI_FONT, std::max(9, w / 21), QFont::Medium);
     p.setFont(font);
     QFontMetrics fm(font);
-    QString label = m_game.name();
-    while (fm.horizontalAdvance(label) > w - 24 && label.length() > 10)
-        label = label.left(label.length() - 3) + QStringLiteral("\u2026");
+    QString label = fm.elidedText(m_game.name(), Qt::ElideRight, w - 24);
     p.setPen(QColor(TEXT_DIM));
     p.drawText(QRectF(12, h - 40, w - 24, 24), Qt::AlignCenter, label);
 }
@@ -115,9 +112,7 @@ void GameCard::paintOverlay(QPainter& p, int w, int h) {
     QFont font(fonts::UI_FONT, std::max(10, w / 19), QFont::DemiBold);
     p.setFont(font);
     QFontMetrics fm(font);
-    QString label = m_game.name();
-    while (fm.horizontalAdvance(label) > w - 20 && label.length() > 10)
-        label = label.left(label.length() - 3) + QStringLiteral("\u2026");
+    QString label = fm.elidedText(m_game.name(), Qt::ElideRight, w - 20);
     p.setPen(QColor(TEXT));
     p.drawText(QRectF(10, h - overlayH + 8, w - 20, overlayH - 12),
                Qt::AlignLeft | Qt::AlignVCenter, label);

@@ -3,8 +3,7 @@
 #include <QPixmap>
 
 QPixmap iconprovider::loadIcon(const Game& game, bool allowNetwork) {
-    Q_UNUSED(game); Q_UNUSED(allowNetwork);
-    return {};
+    return art::loadIcon(game, allowNetwork);
 }
 
 QByteArray iconprovider::loadIconBytes(const Game& game) {

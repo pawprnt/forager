@@ -56,5 +56,6 @@ private:
     QLabel* m_empty = nullptr;
 
     void refreshSpace();
+    void setStatus(const QString& status);
     void finish(const QString& status);
 };

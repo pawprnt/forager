@@ -19,36 +19,6 @@ using namespace theme::C;
 
 static const int QR_PIXEL_SIZE = 256;
 
-static const QString INPUT_QSS = QStringLiteral(
-    "QLineEdit { background-color: %1; border: none; border-radius: %2px; "
-    "padding: 7px 12px; font-size: 13px; } "
-    "QLineEdit:focus { border: 1px solid %3; }")
-    .arg(COLOR_3).arg(RADIUS).arg(ACCENT_1);
-
-static const QString PRIMARY_BTN_QSS = QStringLiteral(
-    "QPushButton { background-color: %1; color: %2; border: none; border-radius: %3px; "
-    "padding: 8px 16px; font-size: 13px; font-weight: 600; } "
-    "QPushButton:hover { background-color: %4; }")
-    .arg(ACCENT_1, TEXT).arg(RADIUS).arg(ACCENT_2);
-
-static const QString SECONDARY_BTN_QSS = QStringLiteral(
-    "QPushButton { background-color: %1; color: %2; border: 1px solid %3; "
-    "border-radius: %4px; padding: 8px 16px; font-size: 13px; } "
-    "QPushButton:hover { background-color: %5; }")
-    .arg(COLOR_2, TEXT, COLOR_3).arg(RADIUS).arg(COLOR_3);
-
-static const QString LINK_QSS = QStringLiteral(
-    "QPushButton { background: transparent; color: %1; border: none; "
-    "font-size: 12px; padding: 4px 0; } "
-    "QPushButton:hover { color: %2; }")
-    .arg(ACCENT_1, ACCENT_2);
-
-static const QString STATUS_QSS = QStringLiteral(
-    "color: %1; font-size: 11px; background: transparent;").arg(TEXT_DIM);
-
-static const QString TITLE_QSS = QStringLiteral(
-    "color: %1; font-size: 18px; font-weight: bold; background: transparent;").arg(TEXT);
-
 // -- SteamAuthWorker -------------------------------------------------------
 
 SteamAuthWorker::SteamAuthWorker(const QString& method, const QString& username,
@@ -93,11 +63,6 @@ void SteamAuthWorker::run() {
         QNetworkRequest req(url);
         req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
         QNetworkReply* reply = nam.post(req, QJsonDocument(body).toJson());
-        return QJsonDocument::fromJson(waitForReply(reply)).object();
-    };
-
-    auto httpGet = [&](const QUrl& url) -> QJsonObject {
-        QNetworkReply* reply = nam.get(QNetworkRequest(url));
         return QJsonDocument::fromJson(waitForReply(reply)).object();
     };
 
@@ -201,14 +166,13 @@ SteamAuthDialog::SteamAuthDialog(QWidget* parent)
     setWindowTitle("Sign in with Steam");
     setModal(true);
     setMinimumWidth(360);
-    setStyleSheet(QStringLiteral("QDialog { background-color: %1; }").arg(BG));
+    style::background(this, BG);
 
     auto* lay = new QVBoxLayout(this);
     lay->setContentsMargins(20, 20, 20, 20);
     lay->setSpacing(10);
 
-    m_title = new QLabel("Sign in with Steam");
-    m_title->setStyleSheet(TITLE_QSS);
+    m_title = style::heading("Sign in with Steam", 18);
     lay->addWidget(m_title);
 
     // QR mode
@@ -220,17 +184,13 @@ SteamAuthDialog::SteamAuthDialog(QWidget* parent)
     m_qrBox->addWidget(m_qrImage);
     m_qrHint = new QLabel("Open the Steam mobile app \u2192 Scan this QR code to approve the sign-in.");
     m_qrHint->setWordWrap(true);
-    m_qrHint->setStyleSheet(STATUS_QSS);
+    style::label(m_qrHint, TEXT_DIM, 11);
     m_qrBox->addWidget(m_qrHint);
-    m_qrRefreshBtn = new QPushButton("Refresh QR code");
-    m_qrRefreshBtn->setCursor(Qt::PointingHandCursor);
-    m_qrRefreshBtn->setStyleSheet(SECONDARY_BTN_QSS);
+    m_qrRefreshBtn = style::button("Refresh QR code", "secondary");
     connect(m_qrRefreshBtn, &QPushButton::clicked, this, &SteamAuthDialog::refreshQr);
     m_qrBox->addWidget(m_qrRefreshBtn);
-    m_qrPasswordLink = new QPushButton("Use password instead");
-    m_qrPasswordLink->setCursor(Qt::PointingHandCursor);
-    m_qrPasswordLink->setStyleSheet(LINK_QSS);
-    connect(m_qrPasswordLink, &QPushButton::clicked, this, &SteamAuthDialog::showPasswordMode);
+    m_qrPasswordLink = style::button("Use password instead", "ghost");
+    connect(m_qrPasswordLink, &QPushButton::clicked, this, [this] { showMode(false); });
     m_qrBox->addWidget(m_qrPasswordLink);
     lay->addLayout(m_qrBox);
 
@@ -239,22 +199,18 @@ SteamAuthDialog::SteamAuthDialog(QWidget* parent)
     m_pwBox->setSpacing(8);
     m_pwUser = new QLineEdit();
     m_pwUser->setPlaceholderText("Steam account name");
-    m_pwUser->setStyleSheet(INPUT_QSS);
+    m_pwUser->setStyleSheet(style::lineeditQss());
     m_pwBox->addWidget(m_pwUser);
     m_pwPass = new QLineEdit();
     m_pwPass->setPlaceholderText("Password");
     m_pwPass->setEchoMode(QLineEdit::Password);
-    m_pwPass->setStyleSheet(INPUT_QSS);
+    m_pwPass->setStyleSheet(style::lineeditQss());
     m_pwBox->addWidget(m_pwPass);
-    m_pwSignInBtn = new QPushButton("Sign in");
-    m_pwSignInBtn->setCursor(Qt::PointingHandCursor);
-    m_pwSignInBtn->setStyleSheet(PRIMARY_BTN_QSS);
+    m_pwSignInBtn = style::button("Sign in", "primary");
     connect(m_pwSignInBtn, &QPushButton::clicked, this, &SteamAuthDialog::startPassword);
     m_pwBox->addWidget(m_pwSignInBtn);
-    m_pwQrLink = new QPushButton("Use QR instead");
-    m_pwQrLink->setCursor(Qt::PointingHandCursor);
-    m_pwQrLink->setStyleSheet(LINK_QSS);
-    connect(m_pwQrLink, &QPushButton::clicked, this, &SteamAuthDialog::showQrMode);
+    m_pwQrLink = style::button("Use QR instead", "ghost");
+    connect(m_pwQrLink, &QPushButton::clicked, this, [this] { showMode(true); });
     m_pwBox->addWidget(m_pwQrLink);
     lay->addLayout(m_pwBox);
 
@@ -263,13 +219,11 @@ SteamAuthDialog::SteamAuthDialog(QWidget* parent)
     m_codeRow->setSpacing(8);
     m_codeEdit = new QLineEdit();
     m_codeEdit->setPlaceholderText("Steam Guard code");
-    m_codeEdit->setStyleSheet(INPUT_QSS);
+    m_codeEdit->setStyleSheet(style::lineeditQss());
     connect(m_codeEdit, &QLineEdit::returnPressed, this, &SteamAuthDialog::submitCode);
     m_codeEdit->setEnabled(false);
     m_codeRow->addWidget(m_codeEdit, 1);
-    m_codeBtn = new QPushButton("Submit");
-    m_codeBtn->setCursor(Qt::PointingHandCursor);
-    m_codeBtn->setStyleSheet(PRIMARY_BTN_QSS);
+    m_codeBtn = style::button("Submit", "primary");
     m_codeBtn->setEnabled(false);
     connect(m_codeBtn, &QPushButton::clicked, this, &SteamAuthDialog::submitCode);
     m_codeRow->addWidget(m_codeBtn);
@@ -277,40 +231,30 @@ SteamAuthDialog::SteamAuthDialog(QWidget* parent)
 
     m_codeHint = new QLabel();
     m_codeHint->setWordWrap(true);
-    m_codeHint->setStyleSheet(STATUS_QSS);
+    style::label(m_codeHint, TEXT_DIM, 11);
     lay->addWidget(m_codeHint);
 
     m_status = new QLabel();
     m_status->setWordWrap(true);
-    m_status->setStyleSheet(STATUS_QSS);
+    style::label(m_status, TEXT_DIM, 11);
     lay->addWidget(m_status);
     lay->addStretch(1);
 
-    showQrMode();
+    showMode(true);
     startQr();
 }
 
-void SteamAuthDialog::showQrMode() {
-    m_pwUser->setVisible(false);
-    m_pwPass->setVisible(false);
-    m_pwSignInBtn->setVisible(false);
-    m_pwQrLink->setVisible(false);
-    m_qrImage->setVisible(true);
-    m_qrHint->setVisible(true);
-    m_qrRefreshBtn->setVisible(true);
-    m_qrPasswordLink->setVisible(true);
-}
-
-void SteamAuthDialog::showPasswordMode() {
-    m_qrImage->setVisible(false);
-    m_qrHint->setVisible(false);
-    m_qrRefreshBtn->setVisible(false);
-    m_qrPasswordLink->setVisible(false);
-    m_pwUser->setVisible(true);
-    m_pwPass->setVisible(true);
-    m_pwSignInBtn->setVisible(true);
-    m_pwQrLink->setVisible(true);
-    m_pwUser->setFocus();
+void SteamAuthDialog::showMode(bool qr) {
+    m_pwUser->setVisible(!qr);
+    m_pwPass->setVisible(!qr);
+    m_pwSignInBtn->setVisible(!qr);
+    m_pwQrLink->setVisible(!qr);
+    m_qrImage->setVisible(qr);
+    m_qrHint->setVisible(qr);
+    m_qrRefreshBtn->setVisible(qr);
+    m_qrPasswordLink->setVisible(qr);
+    if (!qr)
+        m_pwUser->setFocus();
 }
 
 void SteamAuthDialog::startQr() {
@@ -386,10 +330,10 @@ void SteamAuthDialog::onDone(bool ok, const QString& message) {
     if (!ok) {
         setCodeEntryEnabled(false);
         m_status->setText(message);
-        m_status->setStyleSheet(QStringLiteral("color: %1; font-size: 11px; background: transparent;").arg(RED));
+        style::label(m_status, RED, 11);
         return;
     }
-    m_status->setStyleSheet(QStringLiteral("color: %1; font-size: 11px; background: transparent;").arg(ACCENT_1));
+    style::label(m_status, ACCENT_1, 11);
     m_status->setText(QStringLiteral("Signed in as %1.").arg(message));
     emit loginSucceeded(message);
     accept();

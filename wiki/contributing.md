@@ -2,25 +2,37 @@
 
 ## code style
 
-- `from __future__ import annotations` at the top of every module
-- type hints everywhere
+- c++17, no extensions
+- `#pragma once` for headers
+- camelCase for functions, PascalCase for classes
+- `m_` prefix for member variables
 - no comments unless they explain why
 - follow the existing package layout
 
 ## where to put things
 
-- `core/` — config, constants, game dataclass
-- `library/` — scanner, launcher, playtime
-- `providers/` — steam, epic, gog, torrent
-- `services/` — steamgriddb, icon provider
-- `compatibility/` — proton
-- `updates/` — tool updates
-- `ui/` — themes, pages, widgets, dialogs
+- `src/app/` — application entry point, constants
+- `src/core/` — config, game model, paths
+- `src/library/` — scanner, launcher, playtime
+- `src/providers/` — steam, epic, gog, torrent
+- `src/services/` — steamgriddb, icon provider
+- `src/compatibility/` — proton
+- `src/updates/` — tool updates
+- `src/ui/` — theme, pages, widgets, dialogs
+- `src/utils/` — network, filesystem, subprocess, secrets
+
+## building
+
+```bash
+just build      # configure + build debug
+just test       # run tests
+just format     # format source files
+```
 
 ## testing
 
-```
-QT_QPA_PLATFORM=offscreen PYTHONPATH=src python -m pytest -q
+```bash
+just test
 ```
 
 ## commits

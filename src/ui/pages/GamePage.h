@@ -36,6 +36,7 @@ private slots:
 
 private:
     QWidget* buildBannerOverlay();
+    QFrame* makeBox(const QString& title, QVBoxLayout** outLay = nullptr, QLabel** outHeader = nullptr);
     QFrame* buildInfoBox();
     QFrame* buildAchievementsBox();
     void populateAchievements(const Game& game);

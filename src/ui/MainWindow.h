@@ -4,6 +4,7 @@
 #include <QStackedWidget>
 #include <QSet>
 #include <QTimer>
+#include <functional>
 #include "core/Game.h"
 
 class Sidebar;
@@ -53,9 +54,14 @@ private:
     void wireController();
     void loadGames();
     void startArtWorker();
+    void stopArtThread(int waitMs);
     void loadHeroAsync(const Game& game);
-    void updateGridPanel();
     void finishLoading();
+    void applyImage(const QByteArray& data, const std::function<void(const QPixmap&)>& sink);
+    void showPage(QWidget* page, bool back, const QString& tab);
+
+    template <typename W, typename Wire>
+    W* spawnWorker(W* w, Wire&& wire);
 
     Sidebar* m_sidebar = nullptr;
     TitleBar* m_titlebar = nullptr;

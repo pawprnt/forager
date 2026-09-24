@@ -3,11 +3,6 @@
 #include <QPainter>
 #include <QColor>
 
-static QColor hexToColor(const QString& hex) {
-    QString h = hex.startsWith('#') ? hex.mid(1) : hex;
-    return QColor(h.left(2).toInt(nullptr, 16), h.mid(2, 2).toInt(nullptr, 16), h.mid(4, 2).toInt(nullptr, 16));
-}
-
 LoadingSpinner::LoadingSpinner(QWidget* parent)
     : QWidget(parent)
 {
@@ -25,7 +20,7 @@ void LoadingSpinner::paintEvent(QPaintEvent*) {
     p.setRenderHint(QPainter::Antialiasing);
     p.translate(24, 24);
     p.rotate(m_angle);
-    QColor accent = hexToColor(theme::C::ACCENT_1);
+    QColor accent(theme::C::ACCENT_1);
     for (int i = 0; i < 8; ++i) {
         int alpha = 255 - i * 32;
         p.setBrush(QColor(accent.red(), accent.green(), accent.blue(), alpha));

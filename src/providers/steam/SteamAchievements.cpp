@@ -1,4 +1,5 @@
 #include "providers/steam/SteamAchievements.h"
+#include "core/Paths.h"
 
 #include <QFile>
 #include <QDir>
@@ -7,8 +8,8 @@
 QVector<Achievement> SteamAchievements::readFromFile(const QString& steamId,
                                                      const QString& appId) const
 {
-    QString path = QDir::homePath() +
-        "/.local/share/Steam/userdata/" + steamId +
+    QString path = paths::steamRoot() +
+        "/userdata/" + steamId +
         "/" + appId + "/achievements.vdf";
 
     QFile file(path);

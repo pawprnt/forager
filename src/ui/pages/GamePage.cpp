@@ -14,11 +14,10 @@ static constexpr int BANNER_H = 420;
 GamePage::GamePage(QWidget* parent)
     : QWidget(parent)
 {
-    setStyleSheet(QStringLiteral("background-color: %1;").arg(COLOR_1));
+    style::background(this, COLOR_1);
 
-    auto* outer = new QVBoxLayout(this);
+    auto* outer = style::vbox(this, 0);
     outer->setContentsMargins(16, 16, 16, 16);
-    outer->setSpacing(0);
 
     auto* scroll = new QScrollArea(this);
     scroll->setWidgetResizable(true);
@@ -26,7 +25,7 @@ GamePage::GamePage(QWidget* parent)
     scroll->setStyleSheet(QStringLiteral("QScrollArea { background-color: %1; border: none; }").arg(COLOR_1));
 
     auto* content = new QWidget();
-    content->setStyleSheet(QStringLiteral("background-color: %1;").arg(COLOR_1));
+    style::background(content, COLOR_1);
     auto* v = new QVBoxLayout(content);
     v->setContentsMargins(0, 0, 0, 16);
     v->setSpacing(16);
@@ -34,27 +33,22 @@ GamePage::GamePage(QWidget* parent)
     m_banner = new Banner(content);
     v->addWidget(m_banner);
 
-    m_title = new QLabel(content);
-    QFont titleFont(fonts::UI_FONT, 26, QFont::Bold);
-    m_title->setFont(titleFont);
-    style::label(m_title, TEXT);
+    m_title = style::heading("", 26, content);
     m_title->setWordWrap(true);
     v->addWidget(m_title);
 
     auto* infoRow = new QHBoxLayout();
     infoRow->setSpacing(12);
 
-    m_playBtn = new QPushButton();
-    m_playBtn->setCursor(Qt::PointingHandCursor);
+    m_playBtn = style::button(QString(), "play");
     m_playBtn->setFixedHeight(48);
     m_playBtn->setMinimumWidth(220);
-    m_playBtn->setStyleSheet(style::buttonQss("play"));
     auto* playLay = new QHBoxLayout(m_playBtn);
     playLay->setContentsMargins(20, 0, 16, 0);
     playLay->setSpacing(5);
     m_playIconLabel = new QLabel();
     m_playIconLabel->setPixmap(icons::loadIcon("play", "#ffffff").pixmap(20, 20));
-    m_playIconLabel->setStyleSheet("background: transparent;");
+    style::transparent(m_playIconLabel);
     playLay->addWidget(m_playIconLabel);
     m_playText = new QLabel("Play");
     style::label(m_playText, "#ffffff", 17, 600);
@@ -64,9 +58,8 @@ GamePage::GamePage(QWidget* parent)
     infoRow->addWidget(m_playBtn);
 
     m_sourceBadge = new QLabel();
-    m_sourceBadge->setStyleSheet(QStringLiteral(
-        "color: %1; background-color: %2; font-size: 12px; padding: 6px 12px; border-radius: %3px;")
-        .arg(TEXT_DIM, COLOR_3).arg(RADIUS));
+    style::label(m_sourceBadge, TEXT_DIM, 12, -1,
+        QStringLiteral("background-color: %1; padding: 6px 12px; border-radius: %2px;").arg(COLOR_3).arg(RADIUS));
     infoRow->addWidget(m_sourceBadge, 0, Qt::AlignVCenter);
 
     m_pathLabel = new QLabel();
@@ -93,20 +86,14 @@ GamePage::GamePage(QWidget* parent)
 
 QWidget* GamePage::buildBannerOverlay() {
     auto* overlay = new QWidget(m_banner);
-    overlay->setStyleSheet("background: transparent;");
+    style::transparent(overlay);
 
     auto* lay = new QVBoxLayout(overlay);
     lay->setContentsMargins(20, 16, 20, 20);
     lay->setSpacing(12);
 
     auto* top = new QHBoxLayout();
-    auto* backBtn = new QPushButton("\u2039  Library");
-    backBtn->setCursor(Qt::PointingHandCursor);
-    backBtn->setStyleSheet(QStringLiteral(
-        "QPushButton { background-color: rgba(17,17,17,170); color: %1; border: none; "
-        "border-radius: %2px; padding: 8px 14px; font-size: 13px; font-weight: 600; } "
-        "QPushButton:hover { background-color: rgba(17,17,17,230); }")
-        .arg(TEXT).arg(RADIUS));
+    auto* backBtn = style::button("‹  Library", "overlay");
     connect(backBtn, &QPushButton::clicked, this, &GamePage::backRequested);
     top->addWidget(backBtn);
     top->addStretch(1);
@@ -123,17 +110,21 @@ QWidget* GamePage::buildBannerOverlay() {
     return overlay;
 }
 
-QFrame* GamePage::buildInfoBox() {
-    auto* box = new QFrame();
-    box->setFixedWidth(300);
-    style::panel(box, 2);
-    auto* v = new QVBoxLayout(box);
-    v->setContentsMargins(14, 12, 14, 12);
-    v->setSpacing(10);
-
-    auto* header = new QLabel("GAME INFO");
+QFrame* GamePage::makeBox(const QString& title, QVBoxLayout** outLay, QLabel** outHeader) {
+    auto* box = style::card(nullptr, 2, 14, 12, 10);
+    auto* v = static_cast<QVBoxLayout*>(box->layout());
+    auto* header = new QLabel(title);
     style::label(header, TEXT_DIM, 11, 700);
     v->addWidget(header);
+    if (outLay) *outLay = v;
+    if (outHeader) *outHeader = header;
+    return box;
+}
+
+QFrame* GamePage::buildInfoBox() {
+    QVBoxLayout* v = nullptr;
+    auto* box = makeBox("GAME INFO", &v);
+    box->setFixedWidth(300);
 
     auto buildRow = [&](const QString& key, QLabel*& valLabel) {
         auto* row = new QHBoxLayout();
@@ -157,18 +148,11 @@ QFrame* GamePage::buildInfoBox() {
 }
 
 QFrame* GamePage::buildAchievementsBox() {
-    auto* box = new QFrame();
-    style::panel(box, 2);
-    auto* v = new QVBoxLayout(box);
-    v->setContentsMargins(14, 12, 14, 12);
-    v->setSpacing(10);
-
-    m_achHeader = new QLabel("ACHIEVEMENTS");
-    style::label(m_achHeader, TEXT_DIM, 11, 700);
-    v->addWidget(m_achHeader);
+    QVBoxLayout* v = nullptr;
+    auto* box = makeBox("ACHIEVEMENTS", &v, &m_achHeader);
 
     m_achList = new QListWidget();
-    m_achList->setStyleSheet("QListWidget { background: transparent; border: none; }");
+    m_achList->setStyleSheet(style::listQss());
     m_achList->setMaximumHeight(180);
     v->addWidget(m_achList);
     return box;

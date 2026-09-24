@@ -38,7 +38,7 @@ void theme::applyTheme(QApplication* app) {
 }
 
 QString theme::stylesheet() {
-    return QStringLiteral(R"(
+    QString s = QStringLiteral(R"(
         QMainWindow, QWidget {
             background-color: %1;
             color: %2;
@@ -51,7 +51,7 @@ QString theme::stylesheet() {
             border-radius: %6px; padding: 6px 16px; font-size: 13px; font-weight: 500;
         }
         QPushButton:hover { background-color: %5; }
-        QPushButton:pressed { background-color: %10; }
+        QPushButton:pressed { background-color: %8; }
         QPushButton:disabled { background-color: %4; color: %3; }
         QPushButton:focus { outline: none; }
         QLineEdit {
@@ -63,12 +63,12 @@ QString theme::stylesheet() {
         QLineEdit::placeholder { color: %3; }
         QScrollArea { border: none; background: transparent; }
         QScrollBar:vertical { background: transparent; width: 8px; margin: 2px; }
-        QScrollBar::handle:vertical { background: %11; border-radius: 4px; min-height: 40px; }
-        QScrollBar::handle:vertical:hover { background: %12; }
+        QScrollBar::handle:vertical { background: %9; border-radius: 4px; min-height: 40px; }
+        QScrollBar::handle:vertical:hover { background: %10; }
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
         QScrollBar:horizontal { background: transparent; height: 8px; margin: 2px; }
-        QScrollBar::handle:horizontal { background: %11; border-radius: 4px; min-width: 40px; }
-        QScrollBar::handle:horizontal:hover { background: %12; }
+        QScrollBar::handle:horizontal { background: %9; border-radius: 4px; min-width: 40px; }
+        QScrollBar::handle:horizontal:hover { background: %10; }
         QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
         QMenu {
             background-color: %4; color: %2; border: none;
@@ -80,22 +80,15 @@ QString theme::stylesheet() {
             background-color: %4; color: %2; border: none;
             border-radius: 4px; padding: 4px 8px;
         }
-        QMessageBox { background-color: %13; }
+        QMessageBox { background-color: %11; }
         QMessageBox QLabel { color: %2; }
         QMessageBox QPushButton { min-width: 90px; }
-        QFileDialog { background-color: %13; }
+        QFileDialog { background-color: %11; }
     )")
-    .arg(C::BG)
-    .arg(C::TEXT)
-    .arg(C::TEXT_DIM)
-    .arg(C::COLOR_2)
-    .arg(C::COLOR_3)
-    .arg(C::RADIUS)
-    .arg(C::ACCENT_1)
-    .arg(C::ACCENT_2)
-    .arg(C::GREEN)
-    .arg(C::COLOR_4)
-    .arg(C::COLOR_5)
-    .arg(C::COLOR_6)
-    .arg(C::COLOR_1);
+    .arg(C::BG, C::TEXT, C::TEXT_DIM, C::COLOR_2, C::COLOR_3,
+         QString::number(C::RADIUS), C::ACCENT_1, C::COLOR_4, C::COLOR_5);
+
+    s.replace(QLatin1String("%10"), QLatin1String(C::COLOR_6));
+    s.replace(QLatin1String("%11"), QLatin1String(C::COLOR_1));
+    return s;
 }

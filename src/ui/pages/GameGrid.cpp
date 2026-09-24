@@ -3,6 +3,7 @@
 #include "ui/Theme.h"
 #include "ui/Style.h"
 #include "library/Metadata.h"
+#include "artwork/Pipeline.h"
 #include <QScrollBar>
 #include <QEvent>
 #include <algorithm>
@@ -17,11 +18,9 @@ static constexpr int GRID_V_GAP = 16;
 GameGrid::GameGrid(int cardW, int cardH, QWidget* parent)
     : QWidget(parent), m_cardW(cardW), m_cardH(cardH)
 {
-    setStyleSheet("background: transparent;");
+    style::transparent(this);
 
-    auto* v = new QVBoxLayout(this);
-    v->setContentsMargins(0, 0, 0, 0);
-    v->setSpacing(0);
+    auto* v = style::vbox(this);
 
     m_emptyLabel = new QLabel("No games found.", this);
     m_emptyLabel->setAlignment(Qt::AlignCenter);
@@ -31,11 +30,11 @@ GameGrid::GameGrid(int cardW, int cardH, QWidget* parent)
 
     m_scroll = new QScrollArea(this);
     m_scroll->setWidgetResizable(true);
-    m_scroll->setStyleSheet("QScrollArea { background: transparent; border: none; } QScrollArea > QWidget > QWidget { background: transparent; }");
+    m_scroll->setStyleSheet(style::scrollTransparentQss());
     m_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     m_gridHost = new QWidget();
-    m_gridHost->setStyleSheet("background: transparent;");
+    style::transparent(m_gridHost);
     m_grid = new QGridLayout(m_gridHost);
     m_grid->setContentsMargins(0, 0, 0, 0);
     m_grid->setSpacing(GRID_V_GAP);
@@ -109,6 +108,9 @@ void GameGrid::rebuildCards() {
 
 void GameGrid::loadCardArt() {
     for (auto* card : m_cards) {
+        QPixmap pix = art::loadGrid(card->game(), false);
+        if (!pix.isNull())
+            card->setArt(pix);
     }
 }
 

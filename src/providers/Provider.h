@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <stdexcept>
+#include <atomic>
 
 struct OwnedGame {
     QString app_id;
@@ -46,7 +47,15 @@ public:
     virtual void download(const QString& appId, const QString& destination,
                           ProgressFn onProgress = nullptr,
                           std::atomic<bool>* cancel = nullptr) = 0;
+
+protected:
+    void requireConfigured(const char* msg) const;
 };
+
+inline void emitFinalProgress(const QString& name, const ProgressFn& onProgress) {
+    if (!onProgress) return;
+    onProgress(DownloadProgress{name, 1.0});
+}
 
 // Provider registry
 class ProviderRegistry {

@@ -6,7 +6,7 @@
 - searchable sidebar game list
 - recently played row at the top
 - multiple card sizes (small, medium, large)
-- gamepad navigation (via `evdev`)
+- gamepad navigation (via `libevdev`)
 
 ## cover art
 
@@ -42,6 +42,8 @@ pulls art from multiple sources, in order:
 ## ui
 
 - space theme aesthetics (dark, layered, rounded)
-- settings dialog with gamepad support
+- border sweep + zoom hover animation on game cards
+- settings dialog with library, proton, and account tabs
 - downloads page with live progress
 - game page with banner art, achievements, and info
+- credentials stored securely in system keyring (libsecret)

@@ -12,4 +12,5 @@ public:
 private:
     QString depotDownloaderPath() const;
     bool isInstalled() const;
+    void requireConfigured() const;
 };

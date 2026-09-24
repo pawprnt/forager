@@ -5,33 +5,44 @@ thanks for thinking about contributing. this doc covers the basics.
 ## getting started
 
 1. fork and clone the repo
-2. set up a dev environment:
+2. check out the `cpp` branch:
 
 ```bash
 cd forager
-python -m venv .venv
-.venv/bin/pip install -e ".[dev]"
+git checkout cpp
 ```
 
-3. run the app:
+3. build with cmake:
 
 ```bash
-.venv/bin/forager
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j$(nproc)
+./build/forager
 ```
 
-4. run the tests:
+or use the justfile:
 
 ```bash
-.venv/bin/pytest
+just build    # configure + build
+just run      # build + run
+just test     # run tests
+```
+
+on nixos:
+
+```bash
+nix develop   # enter dev shell
+just build
+just run-nix
 ```
 
 ## project structure
 
 ```
-src/forager/
-├── core/           # config, constants, game model, paths
-├── library/        # scanner, launcher, playtime tracking
-├── artwork/        # cover art pipeline, caching, placeholders
+src/
+├── app/            # application entry point, constants
+├── core/           # config, game model, paths
+├── library/        # scanner, launcher, playtime
 ├── providers/      # store backends (steam, epic, gog, torrent)
 ├── services/       # steamgriddb, icon provider
 ├── compatibility/  # proton management
@@ -40,23 +51,24 @@ src/forager/
 │   ├── pages/      # library grid, game page, downloads, store
 │   ├── widgets/    # game card, sidebar, titlebar, etc.
 │   ├── dialogs/    # settings, steam auth, steamgriddb
-│   └── theme.py    # space theme palette + qss
-└── utils/          # network, filesystem, threading helpers
+│   └── theme.*     # space theme palette + qss
+└── utils/          # network, filesystem, subprocess, secrets
 ```
 
 ## code style
 
-- follow existing conventions (snake_case, no comments unless needed)
+- c++17, `#pragma once`
+- camelCase functions, PascalCase classes, `m_` member prefix
+- no comments unless they explain why
 - match the style of the file you're editing
-- keep responses concise in PRs too
 
 ## making changes
 
 1. create a branch: `git checkout -b feat/my-feature`
 2. make your changes
-3. run `pytest` to make sure nothing broke
+3. run `just test` to make sure nothing broke
 4. commit with a clear message
-5. open a PR against `main`
+5. open a PR against `cpp`
 
 ## reporting bugs
 
@@ -65,7 +77,7 @@ open an issue with:
 - what you expected
 - what happened
 - steps to reproduce
-- your OS and python version
+- your OS and compiler version
 
 ## license
 

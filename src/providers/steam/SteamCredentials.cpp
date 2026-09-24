@@ -1,10 +1,8 @@
 #include "providers/steam/SteamCredentials.h"
 #include "core/Paths.h"
+#include "utils/Json.h"
 
 #include <QFile>
-#include <QFileInfo>
-#include <QDir>
-#include <QJsonDocument>
 #include <QJsonObject>
 
 SteamCredentials& SteamCredentials::instance()
@@ -69,31 +67,22 @@ void SteamCredentials::clear()
 
 void SteamCredentials::load()
 {
-    QFile file(m_path);
-    if (!file.open(QIODevice::ReadOnly)) return;
+    auto data = json::readObject(m_path);
+    if (!data) return;
 
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-    if (!doc.isObject()) return;
-
-    QJsonObject o = doc.object();
-    m_username = o["username"].toString();
-    m_steamId = o["steam_id"].toString();
-    m_webApiKey = o["web_api_key"].toString();
-    m_loginSecure = o["login_secure"].toString();
+    m_username = (*data)["username"].toString();
+    m_steamId = (*data)["steam_id"].toString();
+    m_webApiKey = (*data)["web_api_key"].toString();
+    m_loginSecure = (*data)["login_secure"].toString();
 }
 
 void SteamCredentials::save()
 {
-    QDir().mkpath(QFileInfo(m_path).absolutePath());
-
     QJsonObject o;
     o["username"] = m_username;
     o["steam_id"] = m_steamId;
     o["web_api_key"] = m_webApiKey;
     o["login_secure"] = m_loginSecure;
 
-    QFile file(m_path);
-    if (file.open(QIODevice::WriteOnly)) {
-        file.write(QJsonDocument(o).toJson(QJsonDocument::Indented));
-    }
+    json::writeObject(m_path, o);
 }

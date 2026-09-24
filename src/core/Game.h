@@ -6,6 +6,7 @@
 #include <QStringList>
 #include <QFileInfo>
 #include <optional>
+#include <utility>
 
 class Game {
 public:
@@ -34,6 +35,7 @@ public:
     QString sourceName() const { return ::sourceName(m_source); }
     QString displayPath() const;
     QString identifier() const;
+    std::optional<std::pair<QStringList, QString>> sgdbSearch() const;
 
     bool operator==(const Game& other) const;
     bool operator!=(const Game& other) const { return !(*this == other); }

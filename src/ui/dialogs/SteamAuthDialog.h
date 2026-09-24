@@ -57,8 +57,7 @@ protected:
     void closeEvent(QCloseEvent* event) override;
 
 private slots:
-    void showQrMode();
-    void showPasswordMode();
+    void showMode(bool qr);
     void startQr();
     void startPassword();
     void refreshQr();

@@ -1,10 +1,11 @@
 #include "library/Scanner.h"
+#include "library/Metadata.h"
 #include "core/Paths.h"
+#include "utils/Acf.h"
 
 #include <QDir>
 #include <QFileInfo>
 #include <QSet>
-#include <QRegularExpression>
 #include <algorithm>
 
 static const QSet<QString> STEAM_TOOL_APP_IDS = {
@@ -18,26 +19,16 @@ static const QSet<QString> GENERIC_CONTAINERS = {
 
 static const QSet<QString> ENGINE_NAMES = {"other", "rpgmaker", "unity", "unreal"};
 
-// --- ACF parser ---
-
-static QString acfValue(const QString& text, const QString& key)
+template <typename Fn>
+static void forEachSubdir(const QString& path, Fn fn)
 {
-    QRegularExpression re(QStringLiteral("\"%1\"\\s+\"(.+?)\"").arg(key));
-    auto m = re.match(text);
-    return m.hasMatch() ? m.captured(1) : QString();
-}
-
-static std::pair<QString, QString> parseAcf(const QString& filePath)
-{
-    QFile f(filePath);
-    if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
-        return {};
-
-    QString text = QString::fromUtf8(f.readAll());
-    QString appId = acfValue(text, "appid");
-    QString name = acfValue(text, "name");
-    name.remove(QChar::Null);
-    return {appId, name};
+    QDir dir(path);
+    dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
+    dir.setSorting(QDir::Name);
+    for (const auto& entry : dir.entryInfoList()) {
+        if (entry.fileName().startsWith('.')) continue;
+        fn(entry);
+    }
 }
 
 // --- Steam scanner ---
@@ -45,19 +36,14 @@ static std::pair<QString, QString> parseAcf(const QString& filePath)
 static std::vector<Game> scanSteam()
 {
     std::vector<Game> games;
-    QString appsDir = paths::gamesDir() + "/steam/steamapps";
-    QDir dir(appsDir);
-    if (!dir.exists()) return games;
-
-    QStringList acfs = dir.entryList({"appmanifest_*.acf"}, QDir::Files, QDir::Name);
-    for (const auto& acf : acfs) {
-        auto [appId, name] = parseAcf(dir.absoluteFilePath(acf));
+    for (const QString& file : acf::listManifests(paths::gamesDir() + "/steam/steamapps")) {
+        auto [appId, name] = acf::parseFile(file);
         if (appId.isEmpty() || name.isEmpty()) continue;
         if (STEAM_TOOL_APP_IDS.contains(appId)) continue;
 
         Game g(name, Source::Steam);
         g.setAppId(appId);
-        g.setPath(dir.absoluteFilePath("common/" + name));
+        g.setPath(QFileInfo(file).absolutePath() + "/common/" + name);
         g.setSortKey(name.toLower());
         games.push_back(std::move(g));
     }
@@ -69,20 +55,16 @@ static std::vector<Game> scanSteam()
 static std::vector<Game> scanMinecraft()
 {
     std::vector<Game> games;
-    QDir mcDir(paths::gamesDir() + "/minecraft");
-    if (!mcDir.exists()) return games;
+    QString root = paths::gamesDir() + "/minecraft";
+    if (!QDir(root).exists()) return games;
 
-    mcDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
-    mcDir.setSorting(QDir::Name);
-    for (const auto& entry : mcDir.entryInfoList()) {
+    forEachSubdir(root, [&](const QFileInfo& entry) {
         QString name = entry.fileName();
-        if (name.startsWith('.') || name == ".LAUNCHER_TEMP") continue;
-
         Game g(name, Source::Minecraft);
         g.setPath(entry.absoluteFilePath());
         g.setSortKey(name.toLower());
         games.push_back(std::move(g));
-    }
+    });
     return games;
 }
 
@@ -116,28 +98,20 @@ static void collectSeries(const QString& path, QStringList parts, std::vector<Ga
 
 static void scanLooseFlat(const QString& dirPath, std::vector<Game>& out)
 {
-    QDir dir(dirPath);
-    dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
-    dir.setSorting(QDir::Name);
-    for (const auto& entry : dir.entryInfoList()) {
-        if (entry.fileName().startsWith('.')) continue;
+    forEachSubdir(dirPath, [&](const QFileInfo& entry) {
         out.push_back(makeLooseGame(entry));
-    }
+    });
 }
 
 static void scanLooseRoot(const QString& rootPath, std::vector<Game>& out)
 {
-    QDir root(rootPath);
-    root.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
-    root.setSorting(QDir::Name);
-    for (const auto& entry : root.entryInfoList()) {
-        if (entry.fileName().startsWith('.')) continue;
+    forEachSubdir(rootPath, [&](const QFileInfo& entry) {
         if (isGameDir(entry.absoluteFilePath())) {
             out.push_back(makeLooseGame(entry));
         } else {
             scanLooseFlat(entry.absoluteFilePath(), out);
         }
-    }
+    });
 }
 
 static void collectSeries(const QString& path, QStringList parts, std::vector<Game>& out)
@@ -151,36 +125,28 @@ static void collectSeries(const QString& path, QStringList parts, std::vector<Ga
         return;
     }
 
-    QDir dir(path);
-    dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
-    dir.setSorting(QDir::Name);
-    for (const auto& entry : dir.entryInfoList()) {
-        if (entry.fileName().startsWith('.')) continue;
+    forEachSubdir(path, [&](const QFileInfo& entry) {
         QStringList newParts = parts;
         if (!ENGINE_NAMES.contains(entry.fileName().toLower())) {
             newParts.append(entry.fileName());
         }
         collectSeries(entry.absoluteFilePath(), newParts, out);
-    }
+    });
 }
 
 static void scanSeriesDir(const QString& seriesRoot, std::vector<Game>& out)
 {
-    QDir dir(seriesRoot);
-    dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
-    dir.setSorting(QDir::Name);
-    for (const auto& entry : dir.entryInfoList()) {
-        if (entry.fileName().startsWith('.')) continue;
+    forEachSubdir(seriesRoot, [&](const QFileInfo& entry) {
         if (isGameDir(entry.absoluteFilePath())) {
             out.push_back(makeLooseGame(entry));
-            continue;
+            return;
         }
         QStringList parts;
         if (!ENGINE_NAMES.contains(entry.fileName().toLower())) {
             parts.append(entry.fileName());
         }
         collectSeries(entry.absoluteFilePath(), parts, out);
-    }
+    });
 }
 
 static std::vector<Game> scanStandalone()
@@ -190,17 +156,13 @@ static std::vector<Game> scanStandalone()
         QString base = paths::gamesDir() + "/" + container;
         if (!QDir(base).exists()) continue;
 
-        QDir baseDir(base);
-        baseDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
-        baseDir.setSorting(QDir::Name);
-        for (const auto& entry : baseDir.entryInfoList()) {
-            if (entry.fileName().startsWith('.')) continue;
+        forEachSubdir(base, [&](const QFileInfo& entry) {
             if (entry.fileName() == "series") {
                 scanSeriesDir(entry.absoluteFilePath(), games);
             } else {
                 scanLooseRoot(entry.absoluteFilePath(), games);
             }
-        }
+        });
     }
     return games;
 }
@@ -235,9 +197,7 @@ std::vector<Game> scanner::scanAll()
     );
 
     std::sort(all.begin(), all.end(), [](const Game& a, const Game& b) {
-        QString ka = a.sortKey().isEmpty() ? a.name().toLower() : a.sortKey();
-        QString kb = b.sortKey().isEmpty() ? b.name().toLower() : b.sortKey();
-        return ka < kb;
+        return metadata::sortKey(a) < metadata::sortKey(b);
     });
 
     return all;

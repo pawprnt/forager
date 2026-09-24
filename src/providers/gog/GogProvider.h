@@ -21,7 +21,6 @@ public:
     void setBearerToken(const QString& token);
 
 private:
-    net::Headers authHeaders() const;
     QJsonObject getFilteredProducts() const;
     QString m_bearerToken;
 };

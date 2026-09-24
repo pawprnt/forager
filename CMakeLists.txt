@@ -46,6 +46,9 @@ set(FORAGER_SOURCES
     src/utils/Network.cpp
     src/utils/Subprocess.cpp
     src/utils/Filesystem.cpp
+    src/utils/Json.cpp
+    src/utils/Acf.cpp
+    src/utils/Secrets.cpp
     src/ui/Theme.cpp
     src/ui/Style.cpp
     src/ui/Fonts.cpp
@@ -101,6 +104,10 @@ set(FORAGER_HEADERS
     src/utils/Network.h
     src/utils/Subprocess.h
     src/utils/Filesystem.h
+    src/utils/Json.h
+    src/utils/Acf.h
+    src/utils/Secrets.h
+    src/utils/Format.h
     src/ui/Theme.h
     src/ui/Style.h
     src/ui/Fonts.h

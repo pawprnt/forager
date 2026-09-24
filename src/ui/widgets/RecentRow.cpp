@@ -12,9 +12,7 @@ static constexpr int MAX_RECENT = 8;
 RecentRow::RecentRow(int cardW, int cardH, QWidget* parent)
     : QWidget(parent), m_cardW(cardW), m_cardH(cardH)
 {
-    auto* v = new QVBoxLayout(this);
-    v->setContentsMargins(0, 0, 0, 0);
-    v->setSpacing(8);
+    auto* v = style::vbox(this, 8);
 
     auto* title = new QLabel("RECENTLY PLAYED");
     style::label(title, BLUE, 11, 800);
@@ -29,12 +27,9 @@ RecentRow::RecentRow(int cardW, int cardH, QWidget* parent)
     m_scroll->setWidgetResizable(true);
     m_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_scroll->setStyleSheet(
-        "QScrollArea { background: transparent; border: none; }"
-        "QScrollArea > QWidget > QWidget { background: transparent; }");
-
+    m_scroll->setStyleSheet(style::scrollTransparentQss());
     m_host = new QWidget();
-    m_host->setStyleSheet("background: transparent;");
+    style::transparent(m_host);
     m_row = new QHBoxLayout(m_host);
     m_row->setContentsMargins(8, 0, 8, 0);
     m_row->setSpacing(12);
@@ -96,10 +91,8 @@ void RecentRow::rebuild() {
 
 RecentRow::Item RecentRow::buildItem(const Game& game) {
     auto* frame = new QWidget();
-    frame->setStyleSheet("background: transparent;");
-    auto* v = new QVBoxLayout(frame);
-    v->setContentsMargins(0, 0, 0, 0);
-    v->setSpacing(6);
+    style::transparent(frame);
+    auto* v = style::vbox(frame, 6);
 
     auto* card = new GameCard(game, m_cardW, m_cardH);
     connect(card, &GameCard::clicked, this, &RecentRow::gameClicked);

@@ -1,12 +1,11 @@
 #include "providers/gog/GogProvider.h"
 #include "utils/Network.h"
+#include "utils/Json.h"
+#include "utils/Filesystem.h"
 #include "core/Paths.h"
 
-#include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
-#include <QFile>
-#include <QDir>
 
 static AutoRegister<GogProvider> s_reg;
 
@@ -15,15 +14,6 @@ GogProvider::GogProvider() = default;
 void GogProvider::setBearerToken(const QString& token)
 {
     m_bearerToken = token;
-}
-
-net::Headers GogProvider::authHeaders() const
-{
-    net::Headers headers;
-    if (!m_bearerToken.isEmpty()) {
-        headers["Authorization"] = "Bearer " + m_bearerToken;
-    }
-    return headers;
 }
 
 bool GogProvider::isConfigured() const
@@ -36,17 +26,15 @@ QJsonObject GogProvider::getFilteredProducts() const
     QString url = QStringLiteral(
         "https://embed.gog.com/games/ajax/filtered?mediaType=game");
 
-    QByteArray data = net::httpGet(url, 15000, authHeaders());
-    QJsonDocument doc = QJsonDocument::fromJson(data);
-    if (doc.isObject()) return doc.object();
+    QByteArray data = net::httpGet(url, 15000, net::bearerHeaders(m_bearerToken));
+    auto obj = json::parseObject(data);
+    if (obj) return *obj;
     return {};
 }
 
 std::vector<OwnedGame> GogProvider::listOwned(const QString& account) const
 {
-    if (!isConfigured()) {
-        throw BackendNotConfigured("GOG bearer token not configured");
-    }
+    requireConfigured("GOG bearer token not configured");
 
     QJsonObject products = getFilteredProducts();
     std::vector<OwnedGame> games;
@@ -68,21 +56,19 @@ std::vector<OwnedGame> GogProvider::listOwned(const QString& account) const
 void GogProvider::download(const QString& appId, const QString& destination,
                            ProgressFn onProgress, std::atomic<bool>* cancel)
 {
-    if (!isConfigured()) {
-        throw BackendNotConfigured("GOG bearer token not configured");
-    }
+    requireConfigured("GOG bearer token not configured");
 
     QString url = QStringLiteral(
         "https://api.gog.com/products/%1?expand=downloads")
         .arg(appId);
 
-    QByteArray data = net::httpGet(url, 15000, authHeaders());
-    QJsonDocument doc = QJsonDocument::fromJson(data);
-    if (!doc.isObject()) {
+    QByteArray data = net::httpGet(url, 15000, net::bearerHeaders(m_bearerToken));
+    auto obj = json::parseObject(data);
+    if (!obj) {
         throw ProviderError("Failed to fetch GOG product details");
     }
 
-    QJsonArray downloads = doc.object()["downloads"].toArray();
+    QJsonArray downloads = (*obj)["downloads"].toArray();
     for (const auto& v : downloads) {
         QJsonObject dl = v.toObject();
         QJsonArray files = dl["files"].toArray();
@@ -90,19 +76,11 @@ void GogProvider::download(const QString& appId, const QString& destination,
             QJsonObject file = f.toObject();
             QString installerUrl = file["url"].toString();
             if (!installerUrl.isEmpty()) {
-                QDir().mkpath(destination);
-                QByteArray fileData = net::httpGet(installerUrl, 300000);
                 QString filename = installerUrl.section('/', -1);
-                QFile out(destination + "/" + filename);
-                if (out.open(QIODevice::WriteOnly)) {
-                    out.write(fileData);
-                }
-                if (onProgress) {
-                    DownloadProgress prog;
-                    prog.name = appId;
-                    prog.fraction = 1.0;
-                    onProgress(prog);
-                }
+                QString outPath = destination + "/" + filename;
+                QByteArray fileData = net::httpGet(installerUrl, 300000);
+                fs::writeBytes(outPath, fileData);
+                emitFinalProgress(appId, onProgress);
                 return;
             }
         }

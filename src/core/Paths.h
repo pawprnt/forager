@@ -1,11 +1,11 @@
 #pragma once
 
 #include <QString>
-#include <QDir>
 
 namespace paths {
     QString configDir();
     QString cacheDir();
+    QString cacheSub(const QString& name);
     QString gamesDir();
     QString steamAppcacheDir();
     QString protonDir();
@@ -14,4 +14,7 @@ namespace paths {
     QString iconCacheDir();
     QString bannerCacheDir();
     QString playtimeFile();
+    QString steamRoot();
+    QString depotDownloaderDir();
+    QString steamCmdDir();
 } // namespace paths

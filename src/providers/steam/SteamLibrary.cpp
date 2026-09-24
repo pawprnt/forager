@@ -1,12 +1,12 @@
 #include "providers/steam/SteamLibrary.h"
 #include "providers/steam/SteamCredentials.h"
 #include "utils/Network.h"
+#include "utils/Json.h"
+#include "utils/Acf.h"
 #include "core/Paths.h"
 
-#include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
-#include <QDir>
 #include <QFileInfo>
 
 std::vector<OwnedGame> SteamLibrary::fetchOwnedGames() const
@@ -30,38 +30,16 @@ std::vector<OwnedGame> SteamLibrary::fetchOwnedGames() const
 std::vector<OwnedGame> SteamLibrary::fetchInstalledGames() const
 {
     std::vector<OwnedGame> games;
-    QString steamDir = QDir::homePath() + "/.local/share/Steam/steamapps";
+    for (const QString& file : acf::listManifests(paths::steamRoot() + "/steamapps")) {
+        auto [appId, name] = acf::parseFile(file);
+        if (appId.isEmpty() || name.isEmpty()) continue;
 
-    QDir dir(steamDir);
-    if (!dir.exists()) return games;
-
-    QStringList manifests = dir.entryList(QStringList() << "appmanifest_*.acf", QDir::Files);
-
-    for (const QString& file : manifests) {
-        QFile f(dir.absoluteFilePath(file));
-        if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) continue;
-
-        QString appId;
-        QString name;
-        QByteArray content = f.readAll();
-        QStringList lines = QString::fromUtf8(content).split('\n');
-
-        for (const QString& line : lines) {
-            QString trimmed = line.trimmed();
-            if (trimmed.startsWith("\"appid\""))
-                appId = trimmed.section('"', 3, 3);
-            else if (trimmed.startsWith("\"name\""))
-                name = trimmed.section('"', 3, 3);
-        }
-
-        if (!appId.isEmpty() && !name.isEmpty()) {
-            OwnedGame game;
-            game.app_id = appId;
-            game.name = name;
-            game.provider = "steam";
-            game.installed = true;
-            games.push_back(std::move(game));
-        }
+        OwnedGame game;
+        game.app_id = appId;
+        game.name = name;
+        game.provider = "steam";
+        game.installed = true;
+        games.push_back(std::move(game));
     }
 
     return games;
@@ -69,11 +47,10 @@ std::vector<OwnedGame> SteamLibrary::fetchInstalledGames() const
 
 bool SteamLibrary::parseOwnedResponse(const QByteArray& data, std::vector<OwnedGame>& out)
 {
-    QJsonDocument doc = QJsonDocument::fromJson(data);
-    if (!doc.isObject()) return false;
+    auto obj = json::parseObject(data);
+    if (!obj) return false;
 
-    QJsonObject resp = doc.object()["response"].toObject();
-    QJsonArray games = resp["games"].toArray();
+    QJsonArray games = (*obj)["response"].toObject()["games"].toArray();
 
     for (const auto& v : games) {
         QJsonObject obj = v.toObject();

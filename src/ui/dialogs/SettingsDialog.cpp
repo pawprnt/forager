@@ -4,6 +4,8 @@
 #include "ui/Icons.h"
 #include "ui/Fonts.h"
 #include "core/Config.h"
+#include "services/SteamGridDB.h"
+#include "ui/dialogs/SteamGridDBDialog.h"
 #include <QRadioButton>
 #include <QCheckBox>
 #include <QLineEdit>
@@ -12,35 +14,15 @@
 using namespace theme;
 using namespace theme::C;
 
-static const QString NAV_BTN_QSS = QStringLiteral(
-    "QPushButton { background: transparent; color: #b8bcbf; border: none; "
-    "border-left: 3px solid transparent; border-radius: 6px; padding: 9px 12px; "
-    "padding-left: 13px; font-size: 13px; text-align: left; } "
-    "QPushButton:hover { color: %1; background-color: %2; } "
-    "QPushButton:checked { color: %3; background-color: %2; font-weight: 600; "
-    "border-left: 3px solid %3; padding-left: 10px; }")
-    .arg(TEXT, COLOR_3, ACCENT_1);
-
-static const QString BUTTONS_QSS = QStringLiteral(
-    "QPushButton { background-color: %1; color: %2; border: 1px solid %3; "
-    "border-radius: %4px; padding: 0 18px; min-height: 32px; font-size: 14px; font-weight: 600; } "
-    "QPushButton:hover { background-color: %3; } "
-    "QPushButton#saveButton { background-color: %5; color: %2; border: none; } "
-    "QPushButton#saveButton:hover { background-color: %6; }")
-    .arg(COLOR_2, TEXT, COLOR_3).arg(RADIUS).arg(ACCENT_1, ACCENT_2);
-
 SettingsDialog::SettingsDialog(QWidget* parent)
     : QDialog(parent)
 {
     setWindowTitle("Settings");
     resize(760, 560);
     setMinimumSize(640, 500);
-    setStyleSheet(QStringLiteral("#SettingsDialog { background: %1; }").arg(COLOR_2));
-    setObjectName("SettingsDialog");
+    style::background(this, COLOR_2);
 
-    auto* v = new QVBoxLayout(this);
-    v->setContentsMargins(0, 0, 0, 0);
-    v->setSpacing(0);
+    auto* v = style::vbox(this);
 
     v->addWidget(buildHeader());
 
@@ -50,43 +32,37 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     body->addWidget(buildNav());
 
     m_pages = new QStackedWidget();
-    m_pages->setStyleSheet("QStackedWidget { background: transparent; }");
+    style::transparent(m_pages);
+
+    auto makeCard = [](QVBoxLayout* parent) {
+        auto* card = style::card();
+        parent->addWidget(card);
+        return static_cast<QVBoxLayout*>(card->layout());
+    };
 
     // Library tab
     m_libraryTab = new QWidget();
-    m_libraryTab->setStyleSheet("background: transparent;");
-    auto* libLay = new QVBoxLayout(m_libraryTab);
-    libLay->setContentsMargins(0, 0, 0, 0);
-    libLay->setSpacing(14);
+    style::transparent(m_libraryTab);
+    auto* libLay = style::vbox(m_libraryTab, 14);
     {
-        auto* card = new QFrame();
-        card->setStyleSheet(QStringLiteral("background-color: %1; border-radius: %2px;").arg(COLOR_2).arg(RADIUS));
-        auto* cardLay = new QVBoxLayout(card);
-        cardLay->setContentsMargins(12, 12, 12, 12);
-        cardLay->setSpacing(8);
+        auto* cardLay = makeCard(libLay);
 
         auto* dirLabel = new QLabel("Game library folder");
         style::label(dirLabel, TEXT_DIM, 11);
         cardLay->addWidget(dirLabel);
-        auto* dirEdit = new QLineEdit(Config::instance().gamesDir());
-        dirEdit->setStyleSheet(style::lineeditQss());
-        cardLay->addWidget(dirEdit);
+        m_dirEdit = new QLineEdit(Config::instance().gamesDir());
+        m_dirEdit->setStyleSheet(style::lineeditQss());
+        cardLay->addWidget(m_dirEdit);
 
         auto* cacheLabel = new QLabel("Steam appcache/librarycache");
         style::label(cacheLabel, TEXT_DIM, 11);
         cardLay->addWidget(cacheLabel);
-        auto* cacheEdit = new QLineEdit(Config::instance().steamAppcache());
-        cacheEdit->setStyleSheet(style::lineeditQss());
-        cardLay->addWidget(cacheEdit);
-
-        libLay->addWidget(card);
+        m_cacheEdit = new QLineEdit(Config::instance().steamAppcache());
+        m_cacheEdit->setStyleSheet(style::lineeditQss());
+        cardLay->addWidget(m_cacheEdit);
     }
     {
-        auto* card = new QFrame();
-        card->setStyleSheet(QStringLiteral("background-color: %1; border-radius: %2px;").arg(COLOR_2).arg(RADIUS));
-        auto* cardLay = new QVBoxLayout(card);
-        cardLay->setContentsMargins(12, 12, 12, 12);
-        cardLay->setSpacing(8);
+        auto* cardLay = makeCard(libLay);
 
         auto* sizeLabel = new QLabel("Display size");
         style::label(sizeLabel, ACCENT_1, 11, 700);
@@ -99,23 +75,16 @@ SettingsDialog::SettingsDialog(QWidget* parent)
             cardLay->addWidget(rb);
         }
         cardLay->addStretch(1);
-        libLay->addWidget(card);
     }
     libLay->addStretch(1);
     m_pages->addWidget(m_libraryTab);
 
     // Proton tab
     m_protonTab = new QWidget();
-    m_protonTab->setStyleSheet("background: transparent;");
-    auto* protonLay = new QVBoxLayout(m_protonTab);
-    protonLay->setContentsMargins(0, 0, 0, 0);
-    protonLay->setSpacing(14);
+    style::transparent(m_protonTab);
+    auto* protonLay = style::vbox(m_protonTab, 14);
     {
-        auto* card = new QFrame();
-        card->setStyleSheet(QStringLiteral("background-color: %1; border-radius: %2px;").arg(COLOR_2).arg(RADIUS));
-        auto* cardLay = new QVBoxLayout(card);
-        cardLay->setContentsMargins(12, 12, 12, 12);
-        cardLay->setSpacing(8);
+        auto* cardLay = makeCard(protonLay);
 
         auto* prefixLabel = new QLabel("Proton prefix");
         style::label(prefixLabel, TEXT_DIM, 11);
@@ -123,11 +92,8 @@ SettingsDialog::SettingsDialog(QWidget* parent)
         auto* prefixStatus = new QLabel("Proton not installed");
         style::label(prefixStatus, TEXT_DIM, 12);
         cardLay->addWidget(prefixStatus);
-        protonLay->addWidget(card);
     }
-    auto* updateBtn = new QPushButton("Update Proton\u2026");
-    updateBtn->setCursor(Qt::PointingHandCursor);
-    updateBtn->setStyleSheet(style::buttonQss("primary"));
+    auto* updateBtn = style::button("Update Proton…", "primary");
     connect(updateBtn, &QPushButton::clicked, this, &SettingsDialog::updateProtonRequested);
     protonLay->addWidget(updateBtn);
     protonLay->addStretch(1);
@@ -135,16 +101,10 @@ SettingsDialog::SettingsDialog(QWidget* parent)
 
     // Account tab
     m_accountTab = new QWidget();
-    m_accountTab->setStyleSheet("background: transparent;");
-    auto* accLay = new QVBoxLayout(m_accountTab);
-    accLay->setContentsMargins(0, 0, 0, 0);
-    accLay->setSpacing(14);
+    style::transparent(m_accountTab);
+    auto* accLay = style::vbox(m_accountTab, 14);
     {
-        auto* card = new QFrame();
-        card->setStyleSheet(QStringLiteral("background-color: %1; border-radius: %2px;").arg(COLOR_2).arg(RADIUS));
-        auto* cardLay = new QVBoxLayout(card);
-        cardLay->setContentsMargins(12, 12, 12, 12);
-        cardLay->setSpacing(8);
+        auto* cardLay = makeCard(accLay);
 
         auto* steamLabel = new QLabel("Steam account");
         style::label(steamLabel, ACCENT_1, 11, 700);
@@ -156,24 +116,15 @@ SettingsDialog::SettingsDialog(QWidget* parent)
 
         auto* steamBtns = new QHBoxLayout();
         steamBtns->setSpacing(8);
-        auto* signInBtn = new QPushButton("Sign in with Steam");
-        signInBtn->setCursor(Qt::PointingHandCursor);
-        signInBtn->setStyleSheet(style::buttonQss("primary"));
-        auto* signOutBtn = new QPushButton("Sign out");
-        signOutBtn->setCursor(Qt::PointingHandCursor);
-        signOutBtn->setStyleSheet(style::buttonQss("secondary"));
+        auto* signInBtn = style::button("Sign in with Steam", "primary");
+        auto* signOutBtn = style::button("Sign out", "secondary");
         steamBtns->addWidget(signInBtn);
         steamBtns->addWidget(signOutBtn);
         steamBtns->addStretch(1);
         cardLay->addLayout(steamBtns);
-        accLay->addWidget(card);
     }
     {
-        auto* card = new QFrame();
-        card->setStyleSheet(QStringLiteral("background-color: %1; border-radius: %2px;").arg(COLOR_2).arg(RADIUS));
-        auto* cardLay = new QVBoxLayout(card);
-        cardLay->setContentsMargins(12, 12, 12, 12);
-        cardLay->setSpacing(8);
+        auto* cardLay = makeCard(accLay);
 
         auto* sgdbLabel = new QLabel("SteamGridDB");
         style::label(sgdbLabel, ACCENT_1, 11, 700);
@@ -185,18 +136,22 @@ SettingsDialog::SettingsDialog(QWidget* parent)
         tokenEdit->setEchoMode(QLineEdit::Password);
         tokenEdit->setStyleSheet(style::lineeditQss());
         tokenEdit->setPlaceholderText("No API token set");
+        if (SteamGridDB::instance().isConfigured())
+            tokenEdit->setText(SteamGridDB::instance().token());
         tokenRow->addWidget(tokenEdit, 1);
-        auto* tokenSaveBtn = new QPushButton("Save token");
-        tokenSaveBtn->setCursor(Qt::PointingHandCursor);
-        tokenSaveBtn->setStyleSheet(style::buttonQss("secondary"));
+        auto* tokenSaveBtn = style::button("Save token", "secondary");
+        connect(tokenSaveBtn, &QPushButton::clicked, this, [tokenEdit]() {
+            SteamGridDB::instance().setToken(tokenEdit->text().trimmed());
+        });
         tokenRow->addWidget(tokenSaveBtn);
         cardLay->addLayout(tokenRow);
 
-        auto* getTokenBtn = new QPushButton("Get token");
-        getTokenBtn->setCursor(Qt::PointingHandCursor);
-        getTokenBtn->setStyleSheet(style::buttonQss("primary"));
+        auto* getTokenBtn = style::button("Get token", "primary");
+        connect(getTokenBtn, &QPushButton::clicked, this, [this]() {
+            SteamGridDBTokenDialog dlg(this);
+            dlg.exec();
+        });
         cardLay->addWidget(getTokenBtn, 0, Qt::AlignLeft);
-        accLay->addWidget(card);
     }
     accLay->addStretch(1);
     m_pages->addWidget(m_accountTab);
@@ -227,10 +182,7 @@ QWidget* SettingsDialog::buildHeader() {
     icon->setPixmap(icons::loadIcon("settings", ACCENT_1).pixmap(20, 20));
     lay->addWidget(icon);
 
-    auto* title = new QLabel("Settings");
-    QFont titleFont(fonts::UI_FONT, 17, QFont::Bold);
-    title->setFont(titleFont);
-    style::label(title, ACCENT_1);
+    auto* title = style::heading("Settings", 17, nullptr, 700, ACCENT_1);
     lay->addWidget(title);
 
     auto* subtitle = new QLabel("Library, Proton and account");
@@ -252,27 +204,28 @@ QWidget* SettingsDialog::buildNav() {
     struct NavItem { QString label; QString icon; };
     NavItem items[] = {{"Library", "folder"}, {"Proton", "shield"}, {"Account", "user"}};
 
-    m_navList = new QListWidget();
-    m_navList->setStyleSheet("QListWidget { background: transparent; border: none; }");
+    m_navGroup = new QButtonGroup(this);
+    m_navGroup->setExclusive(true);
+
     for (const auto& item : items) {
-        auto* btn = new QPushButton(item.label);
-        btn->setCheckable(true);
-        btn->setCursor(Qt::PointingHandCursor);
-        btn->setIcon(icons::loadIcon(item.icon, "#b8bcbf"));
-        btn->setIconSize(QSize(18, 18));
-        btn->setStyleSheet(NAV_BTN_QSS);
+        auto* btn = navButton(item.label, item.icon);
         lay->addWidget(btn);
+        m_navGroup->addButton(btn);
         if (item.label == "Library") btn->setChecked(true);
-        connect(btn, &QPushButton::clicked, this, [this, btn]() {
-            int idx = 0;
-            if (btn->text() == "Library") idx = 0;
-            else if (btn->text() == "Proton") idx = 1;
-            else idx = 2;
-            switchTab(idx);
+        connect(btn, &QPushButton::clicked, this, [this, i = m_navGroup->buttons().size() - 1]() {
+            switchTab(i);
         });
     }
     lay->addStretch(1);
     return panel;
+}
+
+QPushButton* SettingsDialog::navButton(const QString& text, const QString& icon) {
+    auto* btn = style::button(text, "navside");
+    btn->setCheckable(true);
+    btn->setIcon(icons::loadIcon(icon, TEXT_FAINT));
+    btn->setIconSize(QSize(18, 18));
+    return btn;
 }
 
 QWidget* SettingsDialog::buildFooter() {
@@ -285,7 +238,7 @@ QWidget* SettingsDialog::buildFooter() {
     lay->setSpacing(10);
 
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel);
-    buttons->setStyleSheet(BUTTONS_QSS);
+    buttons->setStyleSheet(style::dialogButtonsQss());
     auto* saveBtn = buttons->button(QDialogButtonBox::Save);
     saveBtn->setObjectName("saveButton");
     saveBtn->setText("Save");
@@ -312,13 +265,17 @@ QString SettingsDialog::selectedCardSize() const {
 }
 
 QString SettingsDialog::gamesDirText() const {
-    return Config::instance().gamesDir();
+    return m_dirEdit ? m_dirEdit->text() : Config::instance().gamesDir();
 }
 
-void SettingsDialog::done(int result) {
-    QDialog::done(result);
+QString SettingsDialog::steamAppcacheText() const {
+    return m_cacheEdit ? m_cacheEdit->text() : Config::instance().steamAppcache();
 }
 
 void SettingsDialog::save() {
+    if (m_dirEdit)
+        Config::instance().setGamesDir(m_dirEdit->text());
+    if (m_cacheEdit)
+        Config::instance().setSteamAppcache(m_cacheEdit->text());
     accept();
 }

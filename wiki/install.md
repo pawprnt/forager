@@ -2,8 +2,13 @@
 
 ## requirements
 
-- Python 3.10+
-- a steam client install (for the steam library source and local cover art)
+- cmake >= 3.20
+- a c++17 compiler (gcc or clang)
+- qt6: widgets, network, concurrent, webengine, svg
+- libevdev
+- libsecret
+- qrencode
+- libglvnd (opengl)
 
 ## from the aur (arch linux)
 
@@ -16,43 +21,35 @@ paru -S forager
 ```
 git clone https://github.com/pawprnt/forager.git
 cd forager
-python -m venv .venv
-.venv/bin/pip install -e .
-.venv/bin/forager
+git checkout cpp
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+./build/forager
 ```
 
-or run without installing:
+or use the justfile:
 
 ```
-QT_QPA_PLATFORM=wayland PYTHONPATH=src python -m forager
+just build    # configure + build debug
+just run      # build + run
+just release  # build release
+just install  # install to ~/.local
 ```
 
-## system-wide (arch linux)
+## nixos
 
-```
-sudo pacman -S python-pyside6 python-evdev python-keyring python-pillow
-git clone https://github.com/pawprnt/forager.git
-cd forager
-sudo python -m pip install --break-system-packages --no-deps .
-forager
+```bash
+nix develop     # enter dev shell with all deps
+just build      # build
+just run-nix    # run with correct qt libs
 ```
 
-- `--break-system-packages` is required on arch (PEP 668)
-- `--no-deps` keeps pacman in charge of dependencies
-
-## release wheel
-
-download the `.whl` from [releases](https://github.com/pawprnt/forager/releases) and:
-
-```
-pip install forager-<version>-py3-none-any.whl
-forager
-```
+or install system-wide via the overlay (see README).
 
 ## runtime dependencies
 
-- `PySide6` — Qt6 bindings
-- `evdev` — gamepad support
-- `keyring` — credential storage
-- `Pillow` — image processing
-- `PySide6-WebEngine` — store webview (optional)
+- **qt6** — widgets, network, concurrent, webengine, svg
+- **libevdev** — gamepad support
+- **libsecret** — credential storage (keyring)
+- **qrencode** — qr code generation
+- **libglvnd** — opengl

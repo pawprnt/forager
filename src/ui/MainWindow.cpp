@@ -12,8 +12,10 @@
 #include "ui/Workers.h"
 #include "ui/Theme.h"
 #include "ui/Icons.h"
+#include "ui/Style.h"
 #include "ui/dialogs/SettingsDialog.h"
 #include "core/Config.h"
+#include "services/SteamGridDB.h"
 #include "library/Scanner.h"
 #include "library/Launcher.h"
 #include "library/Playtime.h"
@@ -30,10 +32,18 @@
 using namespace theme;
 using namespace theme::C;
 
+template <typename W, typename Wire>
+W* MainWindow::spawnWorker(W* w, Wire&& wire) {
+    wire(w);
+    w->start();
+    return w;
+}
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
     Config::instance().load();
+    SteamGridDB::instance().loadToken();
     setWindowTitle("forager");
     resize(1280, 720);
 
@@ -58,27 +68,17 @@ MainWindow::MainWindow(QWidget* parent)
 
 MainWindow::~MainWindow()
 {
-    m_closed = true;
-    m_playtime->flush();
-    if (m_artThread && m_artThread->isRunning()) {
-        m_artThread->requestInterruption();
-        m_artThread->quit();
-        m_artThread->wait(3000);
-    }
+    shutdownThreads();
 }
 
 void MainWindow::setupUi()
 {
     auto* central = new QWidget(this);
-    auto* mainLayout = new QHBoxLayout(central);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(0);
+    auto* mainLayout = style::hbox(central);
 
     auto* right = new QWidget(central);
-    right->setStyleSheet("background: transparent;");
-    auto* rightLayout = new QVBoxLayout(right);
-    rightLayout->setContentsMargins(0, 0, 0, 0);
-    rightLayout->setSpacing(0);
+    style::transparent(right);
+    auto* rightLayout = style::vbox(right);
 
     m_titlebar = new TitleBar(right);
     rightLayout->addWidget(m_titlebar);
@@ -87,13 +87,13 @@ void MainWindow::setupUi()
 
     m_home = new QFrame();
     m_home->setObjectName("HomePage");
-    m_home->setStyleSheet("background: transparent;");
+    style::transparent(m_home);
     auto* homeLayout = new QVBoxLayout(m_home);
     homeLayout->setContentsMargins(24, 18, 24, 18);
     homeLayout->setSpacing(16);
 
     auto* recentPanel = new QFrame();
-    recentPanel->setStyleSheet(QStringLiteral("QFrame { background-color: %1; border-radius: %2px; }").arg(COLOR_2).arg(RADIUS));
+    style::panel(recentPanel, 2);
     auto* recentLayout = new QVBoxLayout(recentPanel);
     recentLayout->setContentsMargins(16, 14, 16, 14);
     recentLayout->setSpacing(0);
@@ -103,7 +103,7 @@ void MainWindow::setupUi()
 
     auto* gridPanel = new QFrame();
     gridPanel->setObjectName("gridPanel");
-    gridPanel->setStyleSheet(QStringLiteral("QFrame { background-color: %1; border-radius: %2px; }").arg(COLOR_2).arg(RADIUS));
+    style::panel(gridPanel, 2);
     auto* gridLayout = new QVBoxLayout(gridPanel);
     gridLayout->setContentsMargins(16, 14, 16, 16);
     gridLayout->setSpacing(0);
@@ -154,7 +154,6 @@ void MainWindow::setupUi()
 
     connect(m_grid, &GameGrid::cardClicked, this, &MainWindow::openGame);
     connect(m_grid, &GameGrid::cardActivated, this, &MainWindow::launchGame);
-    connect(m_grid, &GameGrid::layoutChanged, this, &MainWindow::updateGridPanel);
 
     connect(m_recent, &RecentRow::gameClicked, this, &MainWindow::openGame);
 }
@@ -195,13 +194,13 @@ void MainWindow::loadGames()
     m_scanDone = false;
     ++m_scanGeneration;
 
-    auto* worker = new ScanWorker(this);
     int gen = m_scanGeneration;
-    connect(worker, &ScanWorker::done, this, [this, gen](const QList<Game>& games) {
-        if (gen != m_scanGeneration) return;
-        onGamesScanned(games);
+    spawnWorker(new ScanWorker(this), [this, gen](ScanWorker* worker) {
+        connect(worker, &ScanWorker::done, this, [this, gen](const QList<Game>& games) {
+            if (gen != m_scanGeneration) return;
+            onGamesScanned(games);
+        });
     });
-    worker->start();
 }
 
 void MainWindow::onGamesScanned(const QList<Game>& games)
@@ -223,13 +222,18 @@ void MainWindow::finishLoading()
     startArtWorker();
 }
 
-void MainWindow::startArtWorker()
+void MainWindow::stopArtThread(int waitMs)
 {
     if (m_artThread && m_artThread->isRunning()) {
         m_artThread->requestInterruption();
         m_artThread->quit();
-        m_artThread->wait(2000);
+        m_artThread->wait(waitMs);
     }
+}
+
+void MainWindow::startArtWorker()
+{
+    stopArtThread(2000);
 
     m_artSignals = new ArtSignals(this);
 
@@ -245,23 +249,28 @@ void MainWindow::startArtWorker()
     m_artThread->start();
 }
 
-void MainWindow::onGridReady(const Game& game, const QByteArray& data)
+void MainWindow::applyImage(const QByteArray& data, const std::function<void(const QPixmap&)>& sink)
 {
     if (data.isEmpty()) return;
     QPixmap pix;
     pix.loadFromData(data);
     if (pix.isNull()) return;
-    m_grid->setCardArt(game, pix);
-    m_recent->setCardArt(game, pix);
+    sink(pix);
+}
+
+void MainWindow::onGridReady(const Game& game, const QByteArray& data)
+{
+    applyImage(data, [this, &game](const QPixmap& pix) {
+        m_grid->setCardArt(game, pix);
+        m_recent->setCardArt(game, pix);
+    });
 }
 
 void MainWindow::onIconReady(const Game& game, const QByteArray& data)
 {
-    if (data.isEmpty()) return;
-    QPixmap pix;
-    pix.loadFromData(data);
-    if (!pix.isNull())
+    applyImage(data, [this, &game](const QPixmap& pix) {
         m_sidebar->setGameArt(game, pix);
+    });
 }
 
 void MainWindow::onHeroReady(const Game& game, const QByteArray& data)
@@ -271,32 +280,31 @@ void MainWindow::onHeroReady(const Game& game, const QByteArray& data)
         QString id = game.identifier();
         if (!m_heroDone.contains(id)) return;
     }
-    if (data.isEmpty()) return;
-    QPixmap pix;
-    pix.loadFromData(data);
-    if (!pix.isNull())
+    applyImage(data, [this](const QPixmap& pix) {
         m_gamepage->setHero(pix);
+    });
+}
+
+void MainWindow::showPage(QWidget* page, bool back, const QString& tab)
+{
+    m_content->setCurrentWidget(page);
+    m_titlebar->setBackEnabled(back);
+    m_titlebar->setActiveTab(tab);
 }
 
 void MainWindow::showHome()
 {
-    m_content->setCurrentWidget(m_home);
-    m_titlebar->setBackEnabled(false);
-    m_titlebar->setActiveTab("library");
+    showPage(m_home, false, "library");
 }
 
 void MainWindow::showStore()
 {
-    m_content->setCurrentWidget(m_storePage);
-    m_titlebar->setBackEnabled(true);
-    m_titlebar->setActiveTab("store");
+    showPage(m_storePage, true, "store");
 }
 
 void MainWindow::showDownloads()
 {
-    m_content->setCurrentWidget(m_downloadsPage);
-    m_titlebar->setBackEnabled(true);
-    m_titlebar->setActiveTab("library");
+    showPage(m_downloadsPage, true, "library");
 }
 
 void MainWindow::openGame(const Game& game)
@@ -304,9 +312,7 @@ void MainWindow::openGame(const Game& game)
     if (game.name().isEmpty()) return;
     m_gamepage->setGame(game);
     m_gamepage->setRunning(m_playtime->isRunning(game));
-    m_content->setCurrentWidget(m_gamepage);
-    m_titlebar->setBackEnabled(true);
-    m_titlebar->setActiveTab("library");
+    showPage(m_gamepage, true, "library");
     loadHeroAsync(game);
 }
 
@@ -347,7 +353,6 @@ void MainWindow::launchGame(const Game& game)
     m_playtime->begin(game, rawProc);
     m_gamepage->setRunning(true);
     m_recent->setGames(m_playtime->recentlyPlayed(m_games));
-    updateGridPanel();
 }
 
 void MainWindow::stopGame(const Game& game)
@@ -365,12 +370,12 @@ void MainWindow::installGame(const Game& game)
     showDownloads();
 
     QString dest = Config::instance().gamesDir() + "/" + game.name();
-    auto* worker = new DownloadWorker("steam", game.appId(), dest, this);
-    m_activeDownload = worker;
-
-    connect(worker, &DownloadWorker::progress, this, &MainWindow::onDownloadProgress);
-    connect(worker, &DownloadWorker::done, this, &MainWindow::onDownloadDone);
-    worker->start();
+    m_activeDownload = spawnWorker(
+        new DownloadWorker("steam", game.appId(), dest, this),
+        [this](DownloadWorker* worker) {
+            connect(worker, &DownloadWorker::progress, this, &MainWindow::onDownloadProgress);
+            connect(worker, &DownloadWorker::done, this, &MainWindow::onDownloadDone);
+        });
 }
 
 void MainWindow::onDownloadProgress(double percent, const QString& stage, double speed, double done, double total)
@@ -411,11 +416,14 @@ void MainWindow::openSettings()
     if (dlg.exec() == QDialog::Accepted) {
         QString size = dlg.selectedCardSize();
         Config::instance().setDisplaySize(size);
+        Config::instance().setGamesDir(dlg.gamesDirText());
+        Config::instance().setSteamAppcache(dlg.steamAppcacheText());
         Config::instance().save();
         auto [w, h] = resolveCardSize(size);
         m_cardW = w;
         m_cardH = h;
         m_grid->setCardSize(m_cardW, m_cardH);
+        loadGames();
     }
 }
 
@@ -424,15 +432,15 @@ void MainWindow::updateProton()
     m_downloadsPage->begin("Updating Proton...");
     showDownloads();
 
-    auto* worker = new ProtonUpdateWorker(this);
-    connect(worker, &ProtonUpdateWorker::message, this, [this](const QString& msg) {
-        m_downloadsPage->setProgress(0, msg, 0, 0, 0);
+    spawnWorker(new ProtonUpdateWorker(this), [this](ProtonUpdateWorker* worker) {
+        connect(worker, &ProtonUpdateWorker::message, this, [this](const QString& msg) {
+            m_downloadsPage->setProgress(0, msg, 0, 0, 0);
+        });
+        connect(worker, &ProtonUpdateWorker::done, this, [this](bool ok, const QString& msg) {
+            if (ok) m_downloadsPage->complete(msg);
+            else m_downloadsPage->failed(msg);
+        });
     });
-    connect(worker, &ProtonUpdateWorker::done, this, [this](bool ok, const QString& msg) {
-        if (ok) m_downloadsPage->complete(msg);
-        else m_downloadsPage->failed(msg);
-    });
-    worker->start();
 }
 
 void MainWindow::playTick()
@@ -440,23 +448,11 @@ void MainWindow::playTick()
     if (m_playtime->tick()) {
         m_recent->setGames(m_playtime->recentlyPlayed(m_games));
     }
-
-    Game currentGame = m_gamepage->findChild<QWidget*>() ? Game() : Game();
-    if (m_content->currentWidget() == m_gamepage) {
-    }
-}
-
-void MainWindow::updateGridPanel()
-{
 }
 
 void MainWindow::shutdownThreads()
 {
     m_closed = true;
     m_playtime->flush();
-    if (m_artThread && m_artThread->isRunning()) {
-        m_artThread->requestInterruption();
-        m_artThread->quit();
-        m_artThread->wait(3000);
-    }
+    stopArtThread(3000);
 }

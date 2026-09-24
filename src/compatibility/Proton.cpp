@@ -20,10 +20,9 @@ QString proton::updateProton(std::function<void(const QString&)> messageFn,
 }
 
 bool proton::ensureDepotDownloader() {
-    QString ddDir = paths::cacheDir() + "/depotdownloader";
-    return QDir(ddDir).exists();
+    return QDir(paths::depotDownloaderDir()).exists();
 }
 
 bool proton::ensureSteamCmd() {
-    return QFile::exists(paths::cacheDir() + "/steamcmd/steamcmd.sh");
+    return QFile::exists(paths::steamCmdDir() + "/steamcmd.sh");
 }

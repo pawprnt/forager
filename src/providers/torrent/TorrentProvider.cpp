@@ -22,7 +22,5 @@ std::vector<OwnedGame> TorrentProvider::listOwned(const QString& account) const
 void TorrentProvider::download(const QString& appId, const QString& destination,
                                ProgressFn onProgress, std::atomic<bool>* cancel)
 {
-    if (!isConfigured()) {
-        throw BackendNotConfigured("libtorrent not available");
-    }
+    requireConfigured("libtorrent not available");
 }
